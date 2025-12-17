@@ -86,211 +86,10 @@ fun MainScreen() {
 
             //약속 목록 (스크롤X)
             if (promise) {
-                Column(
-                    modifier = Modifier
-                        .size(327.dp, 226.dp)
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFE5E7EB),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(25.dp)
-                ) {
-                    Row {
-                        Text(text = "약속 이름", fontWeight = Bold, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Image(
-                            painter = painterResource(R.drawable.ic_promise_in_progress),
-                            contentDescription = null
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        Icon(painter = painterResource(R.drawable.ic_day), contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "2025-12-17", fontSize = 14.sp, color = Color(0xFF4B5563))
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row {
-                        Icon(painter = painterResource(R.drawable.ic_time), contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "00:00", fontSize = 14.sp, color = Color(0xFF4B5563))
-                    }
-                    Spacer(modifier = Modifier.height(28.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(painter = painterResource(R.drawable.ic_people), contentDescription = null)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "4명",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF4B5563)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_spot),
-                            contentDescription = null,
-                            tint = Color(0xFF4B5563)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "약속 장소",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF4B5563)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Column(
-                    modifier = Modifier
-                        .size(327.dp, 226.dp)
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFE5E7EB),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(25.dp)
-                ) {
-                    Row {
-                        Text(text = "약속 이름", fontWeight = Bold, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Image(
-                            painter = painterResource(R.drawable.ic_promise_in_progress),
-                            contentDescription = null
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        Icon(painter = painterResource(R.drawable.ic_day), contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "2025-12-17", fontSize = 14.sp, color = Color(0xFF4B5563))
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row {
-                        Icon(painter = painterResource(R.drawable.ic_time), contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "00:00", fontSize = 14.sp, color = Color(0xFF4B5563))
-                    }
-                    Spacer(modifier = Modifier.height(28.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(painter = painterResource(R.drawable.ic_people), contentDescription = null)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "4명",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF4B5563)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_spot),
-                            contentDescription = null,
-                            tint = Color(0xFF4B5563)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "약속 장소",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF4B5563)
-                        )
-                    }
-                }
+                InProgressCard("약속 이름", "2025-12-18", "11:11", 3, "인천대학교")
+                InProgressCard("약속 이름", "2025-12-18", "11:11", 3, "인천대학교")
             } else {
-                Column(
-                    modifier = Modifier
-                        .size(327.dp, 305.dp)
-                        .border(
-                            width = 1.dp,
-                            color = Color(0xFFE5E7EB),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(25.dp)
-                ) {
-                    Row {
-                        Text(text = "약속 이름", fontWeight = Bold, fontSize = 18.sp)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Image(
-                            painter = painterResource(R.drawable.ic_promise_confirmed),
-                            contentDescription = null
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row {
-                        Icon(painter = painterResource(R.drawable.ic_day), contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "2025-12-17", fontSize = 14.sp, color = Color(0xFF4B5563))
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row {
-                        Icon(painter = painterResource(R.drawable.ic_time), contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "00:00", fontSize = 14.sp, color = Color(0xFF4B5563))
-                    }
-                    Spacer(modifier = Modifier.height(28.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(painter = painterResource(R.drawable.ic_people), contentDescription = null)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "4명",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF4B5563)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_spot),
-                            contentDescription = null,
-                            tint = Color(0xFF4B5563)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "약속 장소",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF4B5563)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Column(
-                        modifier = Modifier
-                            .size(277.dp, 72.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF3F4F6))
-                            .padding(12.dp)
-                    ) {
-                        Text(
-                            text = "확정된 장소",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF374151)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF3B82F6))
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "식당, 카페, ...",
-                                fontSize = 14.sp,
-                                color = Color(0xFF4B5563)
-                            )
-                        }
-                    }
-                }
+                ConfirmedCard("은우 생일", "2025-12-17", "00:00", 4,"부천역")
             }
         }
 
@@ -318,6 +117,172 @@ fun MainScreen() {
                     .fillMaxWidth()
                     .height(bottomBarHeight)
             )
+        }
+    }
+}
+
+@Composable
+fun InProgressCard(
+    name: String,
+    date: String,
+    time: String,
+    people: Int,
+    spot: String
+){
+    Column(
+        modifier = Modifier
+            .size(327.dp, 226.dp)
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE5E7EB),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(25.dp)
+    ) {
+        Row {
+            Text(text = name, fontWeight = Bold, fontSize = 18.sp)
+            Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(R.drawable.ic_promise_in_progress),
+                contentDescription = null
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row {
+            Icon(painter = painterResource(R.drawable.ic_day), contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = date, fontSize = 14.sp, color = Color(0xFF4B5563))
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Row {
+            Icon(painter = painterResource(R.drawable.ic_time), contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = time, fontSize = 14.sp, color = Color(0xFF4B5563))
+        }
+        Spacer(modifier = Modifier.height(28.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(painter = painterResource(R.drawable.ic_people), contentDescription = null)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "$people"+"명",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF4B5563)
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(R.drawable.ic_spot),
+                contentDescription = null,
+                tint = Color(0xFF4B5563)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = spot,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF4B5563)
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+}
+
+@Composable
+fun ConfirmedCard(
+    name: String,
+    date: String,
+    time: String,
+    people: Int,
+    spot: String
+){
+    Column(
+        modifier = Modifier
+            .size(327.dp, 305.dp)
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE5E7EB),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(25.dp)
+    ) {
+        Row {
+            Text(text = name, fontWeight = Bold, fontSize = 18.sp)
+            Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(R.drawable.ic_promise_confirmed),
+                contentDescription = null
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row {
+            Icon(painter = painterResource(R.drawable.ic_day), contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = date, fontSize = 14.sp, color = Color(0xFF4B5563))
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Row {
+            Icon(painter = painterResource(R.drawable.ic_time), contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = time, fontSize = 14.sp, color = Color(0xFF4B5563))
+        }
+        Spacer(modifier = Modifier.height(28.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(painter = painterResource(R.drawable.ic_people), contentDescription = null)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "$people"+"명",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF4B5563)
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(R.drawable.ic_spot),
+                contentDescription = null,
+                tint = Color(0xFF4B5563)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = spot,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF4B5563)
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .size(277.dp, 72.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFFF3F4F6))
+                .padding(12.dp)
+        ) {
+            Text(
+                text = "확정된 장소",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF374151)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF3B82F6))
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "식당, 카페, ...",
+                    fontSize = 14.sp,
+                    color = Color(0xFF4B5563)
+                )
+            }
         }
     }
 }
