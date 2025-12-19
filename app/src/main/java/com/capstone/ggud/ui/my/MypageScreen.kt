@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.capstone.ggud.R
+import com.capstone.ggud.ui.components.Section
 
 @Composable
 fun MypageScreen() {
@@ -123,18 +124,6 @@ fun MypageScreen() {
             )
         }
     }
-}
-
-@Composable
-fun Section(label: String){
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(
-        text = label,
-        fontSize = 14.sp,
-        fontWeight = FontWeight.Medium,
-        color = Color(0xFF6B7280),
-        modifier = Modifier.padding(start = 24.dp, top = 16.dp, bottom = 12.dp)
-    )
 }
 
 @Composable
