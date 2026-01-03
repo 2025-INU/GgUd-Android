@@ -130,7 +130,7 @@ fun ToggleSwitch(
         modifier = modifier,
         colors = SwitchDefaults.colors(
             checkedTrackColor = Color(0xFF3B82F6), //ON
-            uncheckedTrackColor = Color(0xFFF9FAFB), //OFF
+            uncheckedTrackColor = Color(0xFFD1D5DB), //OFF
 
             checkedThumbColor = Color.White, //thumb 항상 흰색
             uncheckedThumbColor = Color.White,
