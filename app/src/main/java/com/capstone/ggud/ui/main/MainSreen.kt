@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.capstone.ggud.R
+import com.capstone.ggud.ui.components.CardContent
 
 @Composable
 fun MainScreen() {
@@ -140,24 +141,12 @@ fun InProgressCard(
             .padding(25.dp)
     ) {
         Row {
-            Text(text = name, fontWeight = Bold, fontSize = 18.sp)
+            CardContent(name, date, time)
             Spacer(modifier = Modifier.weight(1f))
             Image(
                 painter = painterResource(R.drawable.ic_promise_in_progress),
                 contentDescription = null
             )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row {
-            Icon(painter = painterResource(R.drawable.ic_day), contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = date, fontSize = 14.sp, color = Color(0xFF4B5563))
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Row {
-            Icon(painter = painterResource(R.drawable.ic_time), contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = time, fontSize = 14.sp, color = Color(0xFF4B5563))
         }
         Spacer(modifier = Modifier.height(28.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
