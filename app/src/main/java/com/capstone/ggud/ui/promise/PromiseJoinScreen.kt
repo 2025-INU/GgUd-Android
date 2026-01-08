@@ -200,7 +200,7 @@ fun PromiseJoinScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
-                    painter = painterResource(R.drawable.ic_location_search),
+                    painter = painterResource(R.drawable.ic_search),
                     contentDescription = null,
                     modifier = Modifier.size(12.dp)
                 )
