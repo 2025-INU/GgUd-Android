@@ -32,18 +32,19 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.TopBar
 import com.capstone.ggud.ui.theme.pBlack
 
 @Composable
-fun WaitingRoomScreen() {
+fun WaitingRoomScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
-        TopBar("약속 대기방")
+        TopBar(navController, "약속 대기방")
         Spacer(modifier = Modifier.height(11.dp))
 
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
@@ -223,10 +224,4 @@ fun PeopleCard(
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun WaitingRoomScreenPreview() {
-    WaitingRoomScreen()
 }

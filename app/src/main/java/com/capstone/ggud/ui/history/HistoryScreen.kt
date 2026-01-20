@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,16 +44,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.theme.pBlack
 
 @Composable
-fun HistoryScreen() {
+fun HistoryScreen(navController: NavHostController) {
 
     var showSearchBar by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf("") }
 
-    val bottomBarHeight = 86.dp
+    val bottomBarHeight = 91.dp
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -159,20 +161,19 @@ fun HistoryScreen() {
                     .padding(bottom = bottomBarHeight + 15.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp) //카드 사이 간격 16
             ) {
-                HistoryCard("친구들과 카페 모임", "2024-1-10", "15:00", 4, "홍대 스타벅스")
-                HistoryCard("회사 동료 저녁식사", "2024-1-8", "19:30", 6, "강남역 맛집")
-                HistoryCard("가족 모임", "2025-12-5", "12:00", 8, "집")
-                HistoryCard("영화 관람", "2025-12-28", "20:00", 3, "CGV 강남")
+                HistoryCard(navController, "친구들과 카페 모임", "2024-1-10", "15:00", 4, "홍대 스타벅스")
+                HistoryCard(navController, "회사 동료 저녁식사", "2024-1-8", "19:30", 6, "강남역 맛집")
+                HistoryCard(navController, "가족 모임", "2025-12-5", "12:00", 8, "집")
+                HistoryCard(navController, "영화 관람", "2025-12-28", "20:00", 3, "CGV 강남")
             }
             Spacer(modifier = Modifier.height(15.dp))
         }
 
-        Box( //하단바 (네비게이션X)
+        Box( //하단바
             modifier = Modifier
                 .zIndex(1f)
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .navigationBarsPadding()
         ) {
             Image(
                 painter = painterResource(R.drawable.bottom_bar_his),
@@ -181,12 +182,42 @@ fun HistoryScreen() {
                     .fillMaxWidth()
                     .height(bottomBarHeight)
             )
+
+            Row(modifier = Modifier.matchParentSize()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            navController.navigate("home")
+                        }
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            navController.navigate("history")
+                        }
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            navController.navigate("my")
+                        }
+                )
+            }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HistoryScreenPreview(){
-    HistoryScreen()
 }

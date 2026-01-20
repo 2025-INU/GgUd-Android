@@ -26,18 +26,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.Section
 import com.capstone.ggud.ui.components.TopBar
 
 @Composable
-fun NotifySettingScreen() {
+fun NotifySettingScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF9FAFB))
     ) {
-        TopBar("알림 설정")
+        TopBar(navController, "알림 설정")
         Spacer(modifier = Modifier.height(11.dp))
 
         Section("약속 알림")
@@ -139,10 +140,4 @@ fun ToggleSwitch(
             uncheckedBorderColor = Color.Transparent
         )
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun NotifySettingScreenPreview(){
-    NotifySettingScreen()
 }

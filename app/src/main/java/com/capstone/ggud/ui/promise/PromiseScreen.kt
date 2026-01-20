@@ -55,6 +55,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.TopBar
 import java.text.SimpleDateFormat
@@ -63,7 +64,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PromiseScreen() {
+fun PromiseScreen(navController: NavHostController) {
     var isNameFocused by remember { mutableStateOf(false) }
     var isDateFocused by remember { mutableStateOf(false) }
     var isTimeFocused by remember { mutableStateOf(false) }
@@ -193,7 +194,7 @@ fun PromiseScreen() {
             modifier = Modifier.fillMaxSize()
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                TopBar("약속 만들기")
+                TopBar(navController, "약속 만들기")
                 Spacer(modifier = Modifier.height(11.dp))
 
                 Image(
@@ -408,7 +409,7 @@ fun PromiseScreen() {
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        // TODO: 약속 생성
+                        navController.navigate("waiting")
                     }
             )
             Text(
@@ -421,10 +422,4 @@ fun PromiseScreen() {
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PromiseScreenPreview(){
-    PromiseScreen()
 }
