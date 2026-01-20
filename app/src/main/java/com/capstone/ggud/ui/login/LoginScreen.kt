@@ -1,6 +1,8 @@
 package com.capstone.ggud.ui.login
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,10 +21,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(navController: NavHostController) {
     Column(
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 63.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -59,7 +62,14 @@ fun LoginScreen() {
                 painter = painterResource(R.drawable.btn_kakao),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize()
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        navController.navigate("home")
+                    }
             )
         }
         Text(
@@ -69,11 +79,4 @@ fun LoginScreen() {
             textAlign = TextAlign.Center
         )
     }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    LoginScreen()
 }

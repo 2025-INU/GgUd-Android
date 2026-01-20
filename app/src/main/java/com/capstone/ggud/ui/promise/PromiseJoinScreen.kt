@@ -50,6 +50,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.TopBar
 import com.capstone.ggud.ui.theme.pBlack
@@ -70,7 +71,7 @@ val transportItems = listOf(
 )
 
 @Composable
-fun PromiseJoinScreen() {
+fun PromiseJoinScreen(navController: NavHostController) {
 
     //위치 입력값
     var location by remember { mutableStateOf("") }
@@ -87,7 +88,7 @@ fun PromiseJoinScreen() {
             .fillMaxSize()
             .background(Color.White)
     ) {
-        TopBar("약속 참여하기")
+        TopBar(navController, "약속 참여하기")
 
         val scrollState = rememberScrollState()
         Column(
@@ -344,10 +345,4 @@ private fun TransportCard(
             color = pBlack
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PromiseJoinScreenPreview() {
-    PromiseJoinScreen()
 }

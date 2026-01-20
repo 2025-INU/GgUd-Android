@@ -2,6 +2,8 @@ package com.capstone.ggud.ui.history
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,11 +26,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.CardContent
 
 @Composable
 fun HistoryCard(
+    navController: NavHostController,
     title: String,
     date: String,
     time: String,
@@ -55,10 +60,17 @@ fun HistoryCard(
                     modifier = Modifier.size(50.dp, 28.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Image( //정산하기 버튼 (네비게이션X)
+                Image( //정산하기 버튼
                     painter = painterResource(R.drawable.btn_calculate),
                     contentDescription = "정산하기 이동",
-                    modifier = Modifier.size(75.5.dp, 28.dp)
+                    modifier = Modifier
+                        .size(75.5.dp, 28.dp)
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
+                            navController.navigate("calculate")
+                        }
                 )
             }
         }
@@ -91,10 +103,4 @@ fun HistoryCard(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HistoryCardPreview(){
-    HistoryCard("은우 생일", "2025-12-17", "19:00", 4, "홍대 스타벅스")
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,14 +39,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.CardContent
 
 @Composable
-fun MainScreen() {
+fun MainScreen(navController: NavHostController) {
     var promise by remember { mutableStateOf(true) }
 
-    val bottomBarHeight = 86.dp
+    val bottomBarHeight = 91.dp
     val fabGap = 15.dp
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -53,12 +55,17 @@ fun MainScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(vertical = 24.dp, horizontal = 16.dp)
+                .padding(horizontal = 24.dp)
                 .padding(bottom = bottomBarHeight + fabGap + 110.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             //상단바
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(76.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = "GgUd",
                     fontWeight = Bold,
@@ -68,11 +75,18 @@ fun MainScreen() {
                 Image(
                     painter = painterResource(R.drawable.btn_notify),
                     contentDescription = "알림페이지",
-                    modifier = Modifier.size(24.dp, 23.dp)
+                    modifier = Modifier
+                        .size(22.dp, 21.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            navController.navigate("notification")
+                        }
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Image( //창 변환 버튼
                 painter = painterResource(if (promise) R.drawable.main_promise_bar else R.drawable.main_promise_bar_upcoming),
@@ -102,14 +116,19 @@ fun MainScreen() {
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
                 .padding(end = 16.dp, bottom = bottomBarHeight + fabGap)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
+                    navController.navigate("promise")
+                }
         )
 
-        Box( //하단바 (네비게이션X)
+        Box( //하단바
             modifier = Modifier
                 .zIndex(1f)
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .navigationBarsPadding()
         ) {
             Image(
                 painter = painterResource(R.drawable.bottom_bar_home),
@@ -118,6 +137,42 @@ fun MainScreen() {
                     .fillMaxWidth()
                     .height(bottomBarHeight)
             )
+
+            Row(modifier = Modifier.matchParentSize()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            navController.navigate("home")
+                        }
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            navController.navigate("history")
+                        }
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            navController.navigate("my")
+                        }
+                )
+            }
         }
     }
 }
@@ -274,10 +329,4 @@ fun ConfirmedCard(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    MainScreen()
 }

@@ -27,18 +27,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.TopBar
 
 @Composable
-fun ProfileEditScreen() {
+fun ProfileEditScreen(navController: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF9FAFB)),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        TopBar("프로필 수정")
+        TopBar(navController, "프로필 수정")
         Spacer(modifier = Modifier.height(11.dp))
 
         Column(
@@ -145,10 +146,4 @@ fun ProfileEditScreen() {
             modifier = Modifier.width(327.dp)
         )
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ProfileEditScreenPreview() {
-    ProfileEditScreen()
 }
