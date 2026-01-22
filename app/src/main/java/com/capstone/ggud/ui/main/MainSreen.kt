@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +56,7 @@ fun MainScreen(navController: NavHostController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.White)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
                 .padding(bottom = bottomBarHeight + fabGap + 110.dp),
@@ -177,6 +180,7 @@ fun MainScreen(navController: NavHostController) {
     }
 }
 
+//진행중인 약속 카드
 @Composable
 fun InProgressCard(
     name: String,
@@ -187,7 +191,9 @@ fun InProgressCard(
 ){
     Column(
         modifier = Modifier
-            .size(327.dp, 226.dp)
+            .width(327.dp)
+            .wrapContentHeight()
+            .heightIn(min = 226.dp)
             .border(
                 width = 1.dp,
                 color = Color(0xFFE5E7EB),
@@ -234,6 +240,7 @@ fun InProgressCard(
     Spacer(modifier = Modifier.height(16.dp))
 }
 
+//예정된 약속 카드
 @Composable
 fun ConfirmedCard(
     name: String,
@@ -244,7 +251,9 @@ fun ConfirmedCard(
 ){
     Column(
         modifier = Modifier
-            .size(327.dp, 305.dp)
+            .width(327.dp)
+            .wrapContentHeight()
+            .heightIn(min = 305.dp)
             .border(
                 width = 1.dp,
                 color = Color(0xFFE5E7EB),
@@ -253,24 +262,12 @@ fun ConfirmedCard(
             .padding(25.dp)
     ) {
         Row {
-            Text(text = name, fontWeight = Bold, fontSize = 18.sp)
+            CardContent(name, date, time)
             Spacer(modifier = Modifier.weight(1f))
             Image(
                 painter = painterResource(R.drawable.ic_promise_confirmed),
                 contentDescription = null
             )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row {
-            Icon(painter = painterResource(R.drawable.ic_day), contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = date, fontSize = 14.sp, color = Color(0xFF4B5563))
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Row {
-            Icon(painter = painterResource(R.drawable.ic_time), contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = time, fontSize = 14.sp, color = Color(0xFF4B5563))
         }
         Spacer(modifier = Modifier.height(28.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -301,7 +298,9 @@ fun ConfirmedCard(
         Spacer(modifier = Modifier.height(8.dp))
         Column(
             modifier = Modifier
-                .size(277.dp, 72.dp)
+                .width(277.dp)
+                .wrapContentHeight()
+                .heightIn(min = 72.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFFF3F4F6))
                 .padding(12.dp)

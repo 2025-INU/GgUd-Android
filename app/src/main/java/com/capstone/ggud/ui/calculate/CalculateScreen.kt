@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,10 +44,10 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.theme.pBlack
 import java.text.NumberFormat
@@ -144,6 +143,7 @@ private fun buildSettlement(payers: List<Payer>): SettlementResult {
 
 @Composable
 fun CalculateScreen(
+    navController: NavHostController,
     title: String
 ) {
     //사람 목록
@@ -200,6 +200,14 @@ fun CalculateScreen(
                     modifier = Modifier
                         .padding(start = (7.7).dp)
                         .size(21.dp, 20.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            val popped = navController.popBackStack()
+                            //혹시 pop이 안 되면 navigateUp 시도
+                            if (!popped) navController.navigateUp()
+                        }
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
@@ -520,10 +528,4 @@ fun RemittanceCard(
 
         Text(text = value, fontWeight = Bold, fontSize = 18.sp, color = Color(0xFF0284C7))
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CalculateScreenPreview(){
-    CalculateScreen("약속 이름")
 }
