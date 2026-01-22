@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Switch
@@ -45,7 +47,8 @@ fun NotifySettingScreen(navController: NavHostController) {
         Box(modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .height(155.dp)
+                .wrapContentHeight()
+                .heightIn(min = 155.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color.White)
         ) {
@@ -60,11 +63,12 @@ fun NotifySettingScreen(navController: NavHostController) {
 
         Section("알림 방식")
         Box(modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .height(77.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .wrapContentHeight()
+                .heightIn(min = 77.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White)
         ) {
             ToggleContent("푸시 알림", "앱 푸시 알림 받기")
         }

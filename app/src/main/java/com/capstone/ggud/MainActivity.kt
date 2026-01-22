@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
                         composable("promise_join") { PromiseJoinScreen(navController = navController) }
                         composable("waiting") { WaitingRoomScreen(navController = navController) }
 
-                        composable("calculate") { CalculateScreen("약속 이름") }
+                        composable("calculate") { CalculateScreen(navController = navController, "약속 이름") }
                     }
                 }
             }

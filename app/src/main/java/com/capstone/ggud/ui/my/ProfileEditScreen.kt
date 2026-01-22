@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,7 +46,9 @@ fun ProfileEditScreen(navController: NavHostController) {
 
         Column(
             modifier = Modifier
-                .size(327.dp, 260.dp)
+                .width(327.dp)
+                .wrapContentHeight()
+                .heightIn(min = 260.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color.White)
                 .padding(24.dp)
@@ -92,7 +96,9 @@ fun ProfileEditScreen(navController: NavHostController) {
 
         Column(
             modifier = Modifier
-                .size(327.dp, 175.dp)
+                .width(327.dp)
+                .wrapContentHeight()
+                .heightIn(min = 175.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color.White)
                 .padding(24.dp)
@@ -119,7 +125,9 @@ fun ProfileEditScreen(navController: NavHostController) {
 
             Box( //이름 텍스트필드 (기능X)
                 modifier = Modifier
-                    .size(279.dp, 47.dp)
+                    .width(279.dp)
+                    .wrapContentHeight()
+                    .heightIn(min = 47.dp)
                     .border(
                         border = BorderStroke(1.dp, Color(0xFFE5E7EB)),
                         shape = RoundedCornerShape(12.dp)
