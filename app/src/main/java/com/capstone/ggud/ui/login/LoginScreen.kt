@@ -15,16 +15,42 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
+import com.capstone.ggud.data.AuthRepository
+import com.capstone.ggud.data.TokenStore
+import com.capstone.ggud.network.ApiClient
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
+    val context = LocalContext.current
+
+    val tokenStore = remember { TokenStore(context.applicationContext) }
+    val authRepo = remember { AuthRepository(ApiClient.getAuthApi(context), tokenStore) }
+
+    val vm: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(authRepo)
+    )
+
+    val uiState by vm.uiState.collectAsState()
+
+    //로그인 성공하면 home으로
+    LaunchedEffect(uiState.success) {
+        if (uiState.success) {
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     Column(
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 63.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -64,10 +90,11 @@ fun LoginScreen(navController: NavHostController) {
                 modifier = Modifier
                     .matchParentSize()
                     .clickable(
+                        enabled = !uiState.loading,
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) {
-                        navController.navigate("home")
+                        vm.loginWithKakao(context)
                     }
             )
         }
