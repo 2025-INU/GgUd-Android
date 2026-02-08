@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GgUd</string>
+    <string name="kakao_native_app_key">5084e1974e29bdf05279f19629dadfcb</string>
 </resources>

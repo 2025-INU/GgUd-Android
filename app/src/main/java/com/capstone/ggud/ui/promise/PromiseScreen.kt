@@ -33,6 +33,8 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +46,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -53,8 +56,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
+import com.capstone.ggud.data.PromiseRepository
+import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.TopBar
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -63,6 +69,18 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PromiseScreen(navController: NavHostController) {
+
+    val context = LocalContext.current
+
+    val promiseRepo = remember {
+        PromiseRepository(ApiClient.getPromiseApi(context))
+    }
+    val vm: PromiseViewModel = viewModel(
+        factory = PromiseViewModelFactory(promiseRepo)
+    )
+
+    val state = vm.uiState
+
     var isNameFocused by remember { mutableStateOf(false) }
     var isDateFocused by remember { mutableStateOf(false) }
     var isTimeFocused by remember { mutableStateOf(false) }
@@ -80,26 +98,18 @@ fun PromiseScreen(navController: NavHostController) {
     var name by remember { mutableStateOf("") }
 
     //날짜,시간 선택 값
-    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
     var showDateDialog by remember { mutableStateOf(false) }
-
-    var selectedHour by remember { mutableStateOf<Int?>(null) }
-    var selectedMinute by remember { mutableStateOf<Int?>(null) }
     var showTimeDialog by remember { mutableStateOf(false) }
 
-    //모든 값이 채워졌는지
-    val isFormValid = name.trim().isNotEmpty()
-            && selectedDateMillis != null
-            && selectedHour != null
-            && selectedMinute != null
-
     //DatePicker 상태
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = state.selectedDateMillis
+    )
 
     //TimePicker 상태
     val timePickerState = rememberTimePickerState(
-        initialHour = selectedHour ?: 12,
-        initialMinute = selectedMinute ?: 0,
+        initialHour = state.selectedHour ?: 12,
+        initialMinute = state.selecteMinute ?: 0,
         is24Hour = true
     )
 
@@ -109,6 +119,13 @@ fun PromiseScreen(navController: NavHostController) {
     }
 
     fun formatTime(h: Int, m: Int): String = String.format("%02d:%02d", h, m)
+
+    LaunchedEffect(state.createdPromiseId) {
+        if (state.createdPromiseId != null) {
+            navController.navigate("waiting")
+            vm.consumeCreated()
+        }
+    }
 
     //날짜 다이얼로그
     if (showDateDialog) {
@@ -121,7 +138,7 @@ fun PromiseScreen(navController: NavHostController) {
                 TextButton(
                     onClick = {
                         //선택된 날짜 저장
-                        selectedDateMillis = datePickerState.selectedDateMillis
+                        vm.onDateSelected(datePickerState.selectedDateMillis)
                         //다이얼로그 닫기 + 테두리 포커스 해제
                         showDateDialog = false
                         isDateFocused = false
@@ -153,8 +170,7 @@ fun PromiseScreen(navController: NavHostController) {
                 TextButton(
                     onClick = {
                         //선택된 시간 저장
-                        selectedHour = timePickerState.hour
-                        selectedMinute = timePickerState.minute
+                        vm.onTimeSelected(timePickerState.hour, timePickerState.minute)
                         //다이얼로그 닫기 + 테두리 포커스 해제
                         showTimeDialog = false
                         isTimeFocused = false
@@ -170,10 +186,12 @@ fun PromiseScreen(navController: NavHostController) {
                 ) { Text("취소") }
             },
             title = { Text("시간 선택") },
-            text = {
-                TimePicker(state = timePickerState)
-            }
+            text = { TimePicker(state = timePickerState) }
         )
+    }
+
+    val isFormValid by remember(state) {
+        derivedStateOf { state.isFormValid && !state.isLoading }
     }
 
     Box( //화면
@@ -246,8 +264,8 @@ fun PromiseScreen(navController: NavHostController) {
                     contentAlignment = Alignment.CenterStart
                 ) {
                     BasicTextField(
-                        value = name,
-                        onValueChange = { if (it.length <= 50) name = it }, //50자 제한
+                        value = state.title,
+                        onValueChange = { vm.onTitleChange(it) },
                         singleLine = true,
                         textStyle = TextStyle(
                             fontSize = 16.sp,
@@ -268,7 +286,7 @@ fun PromiseScreen(navController: NavHostController) {
                             onDone = { focusManager.clearFocus() }
                         ),
                         decorationBox = { inner ->
-                            if(name.isBlank()) {
+                            if(state.title.isBlank()) {
                                 Text(
                                     text = "약속 이름을 입력하세요",
                                     fontWeight = FontWeight.Medium,
@@ -290,7 +308,7 @@ fun PromiseScreen(navController: NavHostController) {
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "${name.length}/50",
+                        text = "${state.title.length}/50",
                         fontSize = 12.sp,
                         color = Color(0xFF6B7280)
                     )
@@ -326,7 +344,7 @@ fun PromiseScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val dateText = selectedDateMillis?.let { formatDate(it) } ?: "-/-/-"
+                        val dateText = state.selectedDateMillis?.let { formatDate(it) } ?: "-/-/-"
 
                         Text(
                             text = dateText,
@@ -373,8 +391,8 @@ fun PromiseScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val timeText = if (selectedHour != null && selectedMinute != null) {
-                            formatTime(selectedHour!!, selectedMinute!!)
+                        val timeText = if (state.selectedHour != null && state.selecteMinute != null) {
+                            formatTime(state.selectedHour!!, state.selecteMinute!!)
                         } else {
                             "--:--"
                         }
@@ -407,7 +425,7 @@ fun PromiseScreen(navController: NavHostController) {
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        navController.navigate("waiting")
+                        vm.createPromise()
                     }
             )
             Text(
