@@ -50,44 +50,48 @@ fun MainScreen(navController: NavHostController) {
     var promise by remember { mutableStateOf(true) }
 
     val bottomBarHeight = 91.dp
-    val fabGap = 15.dp
+    val fabGap = 60.dp
 
     Box(modifier = Modifier.fillMaxSize()) {
+        //상단바
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .height(76.dp)
+                .padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "GgUd",
+                fontWeight = Bold,
+                fontSize = 24.sp
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(R.drawable.btn_notify),
+                contentDescription = "알림페이지",
+                modifier = Modifier
+                    .size(22.dp, 21.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        navController.navigate("notification")
+                    }
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(top = 76.dp)
                 .background(Color.White)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(bottom = bottomBarHeight + fabGap + 110.dp),
+                .padding(bottom = bottomBarHeight + fabGap),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            //상단바
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(76.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "GgUd",
-                    fontWeight = Bold,
-                    fontSize = 24.sp
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Image(
-                    painter = painterResource(R.drawable.btn_notify),
-                    contentDescription = "알림페이지",
-                    modifier = Modifier
-                        .size(22.dp, 21.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            navController.navigate("notification")
-                        }
-                )
-            }
 
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -102,7 +106,7 @@ fun MainScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            //약속 목록 (스크롤X)
+            //약속 목록
             if (promise) {
                 InProgressCard("약속 이름", "2025-12-18", "11:11", 3, "인천대학교")
                 InProgressCard("약속 이름", "2025-12-18", "11:11", 3, "인천대학교")
@@ -118,7 +122,7 @@ fun MainScreen(navController: NavHostController) {
                 .zIndex(2f)
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(end = 16.dp, bottom = bottomBarHeight + fabGap)
+                .padding(end = 16.dp, bottom = fabGap)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null

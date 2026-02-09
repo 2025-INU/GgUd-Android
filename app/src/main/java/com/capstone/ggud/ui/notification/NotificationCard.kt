@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -37,15 +39,17 @@ fun NotificationCard(
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
-                .size(343.dp, 102.dp)
+                .width(343.dp)
+                .wrapContentHeight()
+                .heightIn(min = 102.dp)
                 .background(Color(0xFF3B82F6)),
             horizontalArrangement = Arrangement.End
         ) {
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
-                    .fillMaxHeight()
-                    .size(336.dp)
+                    .width(336.dp)
+                    .wrapContentHeight()
                     .background(Color.White)
                     .padding(17.dp)
 
@@ -58,7 +62,9 @@ fun NotificationCard(
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
-                .size(343.dp, 102.dp)
+                .width(343.dp)
+                .wrapContentHeight()
+                .heightIn(min = 102.dp)
                 .background(Color.White)
                 .padding(17.dp)
         ) {
