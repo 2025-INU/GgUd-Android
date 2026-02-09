@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.capstone.ggud.ui.calculate.CalculateScreen
 import com.capstone.ggud.ui.history.HistoryScreen
 import com.capstone.ggud.ui.login.LoginScreen
+import com.capstone.ggud.ui.login.StartScreen
 import com.capstone.ggud.ui.main.MainScreen
 import com.capstone.ggud.ui.map.KakaoMapScreen
 import com.capstone.ggud.ui.my.MypageScreen
@@ -39,10 +40,10 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "login",
+                        startDestination = "start",
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        Log.d("NAV_CHECK", "✅ startDestination = map")
+                        composable("start") { StartScreen(navController = navController) }
 
                         composable("login") { LoginScreen(navController = navController) }
 
