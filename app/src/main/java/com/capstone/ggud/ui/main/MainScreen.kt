@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,19 +36,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
+import com.capstone.ggud.data.PromiseRepository
+import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.CardContent
 
 @Composable
 fun MainScreen(navController: NavHostController) {
+    val context = LocalContext.current
+
+    val api = remember { ApiClient.getPromiseApi(context) }
+    val repository = remember { PromiseRepository(api) }
+
+    val vm: MainViewModel = viewModel(
+        factory = MainViewModelFactory(repository)
+    )
+    val uiState by vm.uiState.collectAsState()
+
     var promise by remember { mutableStateOf(true) }
 
     val bottomBarHeight = 91.dp
@@ -106,12 +121,29 @@ fun MainScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            val list = if (promise) uiState.inProgress else uiState.upcoming
+
             //약속 목록
             if (promise) {
-                InProgressCard("약속 이름", "2025-12-18", "11:11", 3, "인천대학교")
-                InProgressCard("약속 이름", "2025-12-18", "11:11", 3, "인천대학교")
+                list.forEach { p ->
+                    InProgressCard(
+                        name = p.title,
+                        date = MainViewModel.formatDate(p.promiseDateTime),
+                        time = MainViewModel.formatTime(p.promiseDateTime),
+                        people = p.participantCount,
+                        spot = p.confirmedPlaceName ?: "장소 미정"
+                    )
+                }
             } else {
-                ConfirmedCard("은우 생일", "2025-12-17", "00:00", 4,"부천역")
+                list.forEach { p ->
+                    ConfirmedCard(
+                        name = p.title,
+                        date = MainViewModel.formatDate(p.promiseDateTime),
+                        time = MainViewModel.formatTime(p.promiseDateTime),
+                        people = p.participantCount,
+                        spot = p.confirmedPlaceName ?: "장소 미정"
+                    )
+                }
             }
         }
 
@@ -136,6 +168,7 @@ fun MainScreen(navController: NavHostController) {
                 .zIndex(1f)
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .offset(y=1.dp)
         ) {
             Image(
                 painter = painterResource(R.drawable.bottom_bar_home),
@@ -325,7 +358,7 @@ fun ConfirmedCard(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "식당, 카페, ...",
+                    text = spot,
                     fontSize = 14.sp,
                     color = Color(0xFF4B5563)
                 )
