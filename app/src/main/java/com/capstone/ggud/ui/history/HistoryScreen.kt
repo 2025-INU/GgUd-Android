@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -42,15 +45,28 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
+import com.capstone.ggud.data.PromiseRepository
+import com.capstone.ggud.network.ApiClient
+import com.capstone.ggud.network.PromiseApi
 import com.capstone.ggud.ui.theme.pBlack
 
 @Composable
 fun HistoryScreen(navController: NavHostController) {
+    val context = LocalContext.current
+
+    val api = remember { ApiClient.getPromiseApi(context) }
+    val repository = remember { PromiseRepository(api) }
+
+    val vm: HistoryViewModel = viewModel(
+        factory = HistoryViewModelFactory(repository)
+    )
+    val uiState by vm.uiState.collectAsState()
 
     var showSearchBar by remember { mutableStateOf(false) }
-    var value by remember { mutableStateOf("") }
+    val keywordValue = uiState.keyword
 
     val bottomBarHeight = 91.dp
 
@@ -84,7 +100,11 @@ fun HistoryScreen(navController: NavHostController) {
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            showSearchBar = !showSearchBar
+                            val next = !showSearchBar
+                            showSearchBar = next
+                            if (!next) {
+                                vm.clearKeyword()
+                            }
                         }
                 ) {
                     Image(
@@ -121,8 +141,8 @@ fun HistoryScreen(navController: NavHostController) {
                         )
                         Spacer(modifier = Modifier.width(18.dp))
                         BasicTextField(
-                            value = value,
-                            onValueChange = { if (it.length <= 50) value= it }, //50자 제한
+                            value = keywordValue,
+                            onValueChange = { if (it.length <= 50) vm.onKeywordChanged(it) }, //50자 제한
                             singleLine = true,
                             textStyle = TextStyle(
                                 fontSize = 14.sp,
@@ -133,7 +153,7 @@ fun HistoryScreen(navController: NavHostController) {
                                 keyboardType = KeyboardType.Text //일반 문자 입력용 키보드
                             ),
                             decorationBox = { inner ->
-                                if(value.isBlank()) {
+                                if(keywordValue.isBlank()) {
                                     Text(
                                         text = "약속 이름이나 친구 이름을 검색하세요",
                                         fontWeight = FontWeight.Medium,
@@ -159,10 +179,50 @@ fun HistoryScreen(navController: NavHostController) {
                     .padding(bottom = bottomBarHeight + 15.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp) //카드 사이 간격 16
             ) {
-                HistoryCard(navController, "친구들과 카페 모임", "2024-1-10", "15:00", 4, "홍대 스타벅스")
-                HistoryCard(navController, "회사 동료 저녁식사", "2024-1-8", "19:30", 6, "강남역 맛집")
-                HistoryCard(navController, "가족 모임", "2025-12-5", "12:00", 8, "집")
-                HistoryCard(navController, "영화 관람", "2025-12-28", "20:00", 3, "CGV 강남")
+                when {
+                    uiState.loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "불러오는 중...",
+                                fontSize = 14.sp,
+                                color = Color(0xFF6B7280)
+                            )
+                        }
+                    }
+
+                    uiState.items.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "표시할 히스토리가 없습니다.",
+                                fontSize = 14.sp,
+                                color = Color(0xFF6B7280)
+                            )
+                        }
+                    }
+
+                    else -> {
+                        uiState.items.forEach { p ->
+                            val date = HistoryViewModel.formatDate(p.promiseDateTime)
+                            val time = HistoryViewModel.formatTime(p.promiseDateTime)
+                            val spot = p.confirmedPlaceName ?: "장소 미정"
+
+                            HistoryCard(
+                                navController = navController,
+                                title = p.title,
+                                date = date,
+                                time = time,
+                                people = p.participantCount,
+                                spot = spot
+                            )
+                        }
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(15.dp))
         }
@@ -172,6 +232,7 @@ fun HistoryScreen(navController: NavHostController) {
                 .zIndex(1f)
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .offset(y=1.dp)
         ) {
             Image(
                 painter = painterResource(R.drawable.bottom_bar_his),
