@@ -8,14 +8,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,8 +28,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Place
@@ -50,12 +52,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
@@ -145,7 +148,7 @@ fun RecommendPlaceScreen(navController: NavHostController) {
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            // TODO: 약속 확정 처리
+                            navController.navigate("home")
                         }
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     contentAlignment = Alignment.Center
@@ -186,6 +189,7 @@ private fun RecommendTopBar(navController: NavHostController) {
     )
 
     var selectedType by remember { mutableStateOf("전체") }
+    var showDialog by remember { mutableStateOf(false) }
 
     Column { //상단바
         Row(modifier = Modifier
@@ -240,7 +244,17 @@ private fun RecommendTopBar(navController: NavHostController) {
             Image(
                 painter = painterResource(R.drawable.btn_ai),
                 contentDescription = "AI 버튼",
-                modifier = Modifier.size(43.dp)
+                modifier = Modifier
+                    .size(43.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { showDialog = true }
+            )
+            AiRecommendDialog(
+                showDialog = showDialog,
+                onDismiss = { showDialog = false }
             )
         }
         Divider(thickness = 1.dp, color = Color(0xFFE5E7EB))
@@ -546,6 +560,222 @@ private fun RecommendPlaceCard(
                 fontSize = 12.sp,
                 color = Color(0xFF4B5563)
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AiRecommendDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit
+) {
+    if (!showDialog) return
+
+    var text by remember { mutableStateOf("") }
+
+    val exampleKeywoeds = listOf(
+        "로맨틱한 분위기",
+        "조용한 카페",
+        "활기찬 펍",
+        "고급 레스토랑"
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .width(327.dp)
+                .wrapContentHeight()
+                .heightIn(min = 437.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.btn_ai),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "AI 장소 추천",
+                    fontWeight = Bold,
+                    fontSize = 18.sp,
+                    color = pBlack
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF3F4F6))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ){ onDismiss() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        tint = Color(0xFF4B5563),
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "원하는 분위기나 장소 스타일을 자세히 설명해주세요. AI가 맞춤형 장소를 추천해드립니다.",
+                fontSize = 14.sp,
+                color = Color(0xFF4B5563)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(128.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
+                    .padding(17.dp, 13.dp)
+            ) {
+                BasicTextField(
+                    value = text,
+                    onValueChange = { if (it.length <= 200) text = it },
+                    modifier = Modifier.fillMaxSize(),
+                    textStyle = TextStyle(
+                        fontSize = 14.sp,
+                        color = pBlack,
+                        lineHeight = 20.sp
+                    ),
+                    singleLine = false,
+                    maxLines = Int.MAX_VALUE,
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.TopStart
+                        ) {
+                            if (text.isEmpty()) {
+                                Text(
+                                    text = "예: 로맨틱하고 조용한 분위기의 카페나 레스토랑을 찾고 있어요.",
+                                    fontSize = 14.sp,
+                                    lineHeight = 20.sp,
+                                    color = Color(0xFF6B7280)
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 64.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    exampleKeywoeds.forEach { keyword ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(Color(0xFFECFDF5))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    text = keyword
+                                }
+                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = keyword,
+                                fontSize = 12.sp,
+                                color = Color(0xFF059669)
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    text = "${text.length}/200",
+                    fontSize = 12.sp,
+                    color = Color(0xFF9CA3AF),
+                    modifier = Modifier.align(Alignment.TopEnd)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(134.5.dp, 47.dp)
+                        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            onDismiss()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "취소",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF374151)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(134.5.dp, 47.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (text.isBlank()) {
+                                Color(0xFF10B981).copy(alpha = 0.5f)
+                            } else {
+                                Color(0xFF10B981)
+                            }
+                        )
+                        .clickable(
+                            enabled = text.isNotBlank(),
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            onDismiss()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "AI 추천 받기",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
+            }
         }
     }
 }

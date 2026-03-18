@@ -85,7 +85,7 @@ fun MiddlePointScreen(navController: NavHostController) {
                         avgMinutes = 15
                     )
                 ),
-                onClickItem = { /*TODO*/ }
+                onClickItem = { navController.navigate("recommend_place") }
             )
         }
     ) { innerPadding ->
@@ -208,7 +208,6 @@ private fun MiddlePointCard(
     item: MiddlePointCardUi,
     onClick: () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
 
     Surface(
         modifier = Modifier
@@ -216,7 +215,7 @@ private fun MiddlePointCard(
             .heightIn(min = 105.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(
-                interactionSource = interactionSource,
+                interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { onClick() },
         shape = RoundedCornerShape(12.dp),
