@@ -1,12 +1,13 @@
 package com.capstone.ggud.ui.promise
 
-import androidx.annotation.DrawableRes
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,9 +20,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -29,8 +27,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,6 +40,7 @@ import androidx.compose.ui.draw.paint
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -49,38 +49,175 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
+import com.capstone.ggud.data.PromiseRepository
+import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.TopBar
+import com.capstone.ggud.ui.components.formatIsoToDotTime
 import com.capstone.ggud.ui.theme.pBlack
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.os.Build
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.core.content.ContextCompat
+import com.capstone.ggud.data.KakaoLocalRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.Locale
 
-data class TransportItem(
-    val id: Int,
+data class PlaceSearchItem(
     val name: String,
-    @DrawableRes val iconRes: Int
-)
-
-val transportItems = listOf(
-    TransportItem(1, "도보", R.drawable.ic_walk),
-    TransportItem(2, "버스", R.drawable.ic_bus),
-    TransportItem(3, "지하철", R.drawable.ic_subway),
-    TransportItem(4, "자동차", R.drawable.ic_car),
-    TransportItem(5, "택시", R.drawable.ic_taxi),
-    TransportItem(6, "자전거", R.drawable.ic_bike),
+    val address: String,
+    val roadAddress: String,
+    val longitude: String,
+    val latitude: String
 )
 
 @Composable
-fun PromiseJoinScreen(navController: NavHostController) {
+fun PromiseJoinScreen(
+    navController: NavHostController,
+    promiseId: Long
+) {
 
     //위치 입력값
     var location by remember { mutableStateOf("") }
     var showLocation by remember { mutableStateOf(false) }
 
-    //교통수단 선택 상태
-    var selectedTransportId by remember { mutableIntStateOf(-1) } //선택 없음 = -1
+    var selectedLatitude by remember { mutableStateOf<Double?>(null) }
+    var selectedLongitude by remember { mutableStateOf<Double?>(null) }
 
-    //버튼 활성 조건
-    val isJoinEnabled = showLocation && selectedTransportId != -1
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<PlaceSearchItem>>(emptyList()) }
+    var searchJob by remember { mutableStateOf<Job?>(null) }
+
+    val context = LocalContext.current
+    val repository = remember {
+        PromiseRepository(ApiClient.getPromiseApi(context))
+    }
+    val vm: PromiseJoinViewModel = viewModel(
+        factory = PromiseJoinViewModelFactory(repository)
+    )
+    val uiState by vm.uiState.collectAsState()
+
+    val kakaoRepository = remember { KakaoLocalRepository(context) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    var currentAddress by remember { mutableStateOf("") }
+
+    val canJoin = selectedLatitude != null && selectedLongitude != null && !uiState.isSubmitting
+
+    LaunchedEffect(promiseId) {
+        vm.loadPromiseSummary(promiseId)
+    }
+
+    LaunchedEffect(uiState.submitSuccess) {
+        if (uiState.submitSuccess) {
+            navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.set("location_submitted", true)
+
+            navController.popBackStack()
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        @SuppressLint("MissingPermission")
+        if (fineGranted || coarseGranted) {
+            fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                CancellationTokenSource().token
+            ).addOnSuccessListener { loc ->
+                if (loc == null) {
+                    Toast.makeText(context, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }
+
+                val geocoder = Geocoder(context, Locale.KOREA)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    geocoder.getFromLocation(loc.latitude, loc.longitude, 1) { addresses ->
+                        val address = addresses.firstOrNull()?.getAddressLine(0).orEmpty()
+                        if (address.isNotBlank()) {
+                            location = address
+                            currentAddress = address
+                            selectedLatitude = loc.latitude
+                            selectedLongitude = loc.longitude
+                            searchQuery = address
+                            searchResults = emptyList()
+                            showLocation = true
+                        } else {
+                            Toast.makeText(context, "주소 변환에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
+                    val address = addresses?.firstOrNull()?.getAddressLine(0).orEmpty()
+
+                    if (address.isNotBlank()) {
+                        location = address
+                        currentAddress = address
+                        selectedLatitude = loc.latitude
+                        selectedLongitude = loc.longitude
+                        searchQuery = address
+                        searchResults = emptyList()
+                        showLocation = true
+                    } else {
+                        Toast.makeText(context, "주소 변환에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }.addOnFailureListener {
+                Toast.makeText(context, "위치 정보를 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun searchPlaces(query: String) {
+        searchJob?.cancel()
+
+        if (query.isBlank()) {
+            searchResults = emptyList()
+            return
+        }
+
+        searchJob = coroutineScope.launch {
+            delay(300) // 타이핑 debounce
+
+            val result = kakaoRepository.searchPlaces(query)
+            searchResults = result.map {
+                PlaceSearchItem(
+                    name = it.place_name.orEmpty(),
+                    address = it.address_name.orEmpty(),
+                    roadAddress = it.road_address_name.orEmpty(),
+                    longitude = it.x.orEmpty(),
+                    latitude = it.y.orEmpty()
+                )
+            }
+        }
+    }
+
+    val titleText = uiState.summary?.title ?: "약속 이름"
+    val dateText = uiState.summary?.promiseDateTime?.let { formatIsoToDotTime(it) } ?: "-"
+    val hostName = uiState.summary?.hostNickname ?: "주최자"
 
     Column(
         modifier = Modifier
@@ -115,22 +252,20 @@ fun PromiseJoinScreen(navController: NavHostController) {
                     )
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    Column {
+                    Column { //약속 요약
                         Text(
-                            text = "약속 이름",
+                            text = titleText,
                             fontWeight = Bold,
                             fontSize = 18.sp,
                             color = pBlack
                         )
-                        Spacer(modifier = Modifier.height(5.dp))
                         Text(
-                            text = "2026-01-01 • 00:00", //•
+                            text = dateText,
                             fontSize = 14.sp,
                             color = Color(0xFF4B5563)
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "주최자: 이은우",
+                            text = "주최자: ${hostName}",
                             fontSize = 12.sp,
                             color = Color(0xFF6B7280)
                         )
@@ -154,7 +289,7 @@ fun PromiseJoinScreen(navController: NavHostController) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "출발 위치와 교통수단을 선택해주세요",
+                        text = "출발 위치를 입력해주세요",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         color = Color(0xFF0284C7)
@@ -182,7 +317,67 @@ fun PromiseJoinScreen(navController: NavHostController) {
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
                     ) {
-                        showLocation = true
+                        val finePermission = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        val coarsePermission = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (finePermission || coarsePermission) {
+                            fusedLocationClient.getCurrentLocation(
+                                Priority.PRIORITY_HIGH_ACCURACY,
+                                CancellationTokenSource().token
+                            ).addOnSuccessListener { loc ->
+                                if (loc == null) {
+                                    Toast.makeText(context, "현재 위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                    return@addOnSuccessListener
+                                }
+
+                                val geocoder = Geocoder(context, Locale.KOREA)
+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    geocoder.getFromLocation(loc.latitude, loc.longitude, 1) { addresses ->
+                                        val address = addresses.firstOrNull()?.getAddressLine(0).orEmpty()
+                                        if (address.isNotBlank()) {
+                                            location = address
+                                            currentAddress = address
+                                            searchQuery = address
+                                            searchResults = emptyList()
+                                            showLocation = true
+                                        } else {
+                                            Toast.makeText(context, "주소 변환에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
+                                    val address = addresses?.firstOrNull()?.getAddressLine(0).orEmpty()
+
+                                    if (address.isNotBlank()) {
+                                        location = address
+                                        currentAddress = address
+                                        searchQuery = address
+                                        searchResults = emptyList()
+                                        showLocation = true
+                                    } else {
+                                        Toast.makeText(context, "주소 변환에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }.addOnFailureListener {
+                                Toast.makeText(context, "위치 정보를 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
                     }
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -206,8 +401,13 @@ fun PromiseJoinScreen(navController: NavHostController) {
                 )
                 Spacer(modifier = Modifier.width(18.dp))
                 BasicTextField(
-                    value = location,
-                    onValueChange = { if (it.length <= 50) location = it }, //50자 제한
+                    value = searchQuery,
+                    onValueChange = {
+                        if (it.length <= 50) {
+                            searchQuery = it
+                            searchPlaces(it)
+                        }
+                    },
                     singleLine = true,
                     textStyle = TextStyle(
                         fontSize = 14.sp,
@@ -218,7 +418,7 @@ fun PromiseJoinScreen(navController: NavHostController) {
                         keyboardType = KeyboardType.Text //일반 문자 입력용 키보드
                     ),
                     decorationBox = { inner ->
-                        if(location.isBlank()) {
+                        if (searchQuery.isBlank()) {
                             Text(
                                 text = "주소를 검색하세요",
                                 fontWeight = FontWeight.Medium,
@@ -231,70 +431,114 @@ fun PromiseJoinScreen(navController: NavHostController) {
                 )
             }
 
+            if (searchResults.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xFFE5E7EB),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .background(Color.White, RoundedCornerShape(12.dp))
+                ) {
+                    searchResults.forEachIndexed { index, item ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    val selectedAddress =
+                                        if (item.roadAddress.isNotBlank()) item.roadAddress else item.address
+
+                                    location = selectedAddress
+                                    currentAddress = selectedAddress
+                                    selectedLatitude = item.latitude.toDoubleOrNull()
+                                    selectedLongitude = item.longitude.toDoubleOrNull()
+                                    searchQuery = selectedAddress
+                                    showLocation = true
+                                    searchResults = emptyList()
+                                }
+                                .padding(horizontal = 16.dp, vertical = 14.dp)
+                        ) {
+                            Text(
+                                text = if (item.name.isNotBlank()) item.name else "검색 결과",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF111827)
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = if (item.roadAddress.isNotBlank()) item.roadAddress else item.address,
+                                fontSize = 13.sp,
+                                color = Color(0xFF6B7280)
+                            )
+                        }
+
+                        if (index != searchResults.lastIndex) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(Color(0xFFF3F4F6))
+                            )
+                        }
+                    }
+                }
+            }
+
             if (showLocation) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(327f / 54f)
-                        .background(Color(0xFFF0FDF4))
+                        .background(Color(0xFFF0FDF4), RoundedCornerShape(12.dp))
                         .border(1.dp, Color(0xFFBBF7D0), RoundedCornerShape(12.dp))
                         .padding(17.dp)
                 ) {
                     Text(
-                        text = "경기도 부천시 소사동",
+                        text = currentAddress.ifBlank { location },
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
                         color = Color(0xFF166534)
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = "교통수단",
-                fontWeight = Bold,
-                fontSize = 18.sp,
-                color = pBlack
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3), //한 행에 3개 버튼
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(236.dp),
-                userScrollEnabled = false,
-                horizontalArrangement = Arrangement.spacedBy(12.dp), //가로간격
-                verticalArrangement = Arrangement.spacedBy(12.dp) //세로간격
-            ) {
-                items(
-                    items = transportItems,
-                    key = { it.id }
-                ) { item ->
-                    TransportCard(
-                        item = item,
-                        selected = (item.id == selectedTransportId),
-                        onClick = {
-                            selectedTransportId = if (selectedTransportId == item.id) -1 else item.id
-                        }
-                    )
-                }
-            }
             Spacer(modifier = Modifier.height(64.dp))
 
             Image(
-                painter = painterResource(if (isJoinEnabled) R.drawable.btn_join else R.drawable.btn_join_disabled),
+                painter = painterResource(if (canJoin) R.drawable.btn_join else R.drawable.btn_join_disabled),
                 contentDescription = "약속 참여",
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .scale(1.08f)
                     .clickable(
-                        enabled = isJoinEnabled,
+                        enabled = canJoin,
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        // TODO: 약속 참여
+                        val lat = selectedLatitude
+                        val lng = selectedLongitude
+
+                        if (lat == null || lng == null) {
+                            Toast.makeText(context, "출발 위치를 먼저 선택해주세요.", Toast.LENGTH_SHORT).show()
+                            return@clickable
+                        }
+
+                        vm.updateDeparture(
+                            promiseId = promiseId,
+                            latitude = lat,
+                            longitude = lng,
+                            address = currentAddress.ifBlank { location }
+                        )
                     }
             )
             Text(
@@ -306,42 +550,5 @@ fun PromiseJoinScreen(navController: NavHostController) {
                     .offset(y=-(8).dp)
             )
         }
-    }
-}
-
-@Composable
-private fun TransportCard(
-    item: TransportItem,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val borderColor = if (selected) Color(0xFF0EA5E9) else Color(0xFFE5E7EB)
-    val bgColor = if (selected) Color(0xFFF0F9FF) else Color.White
-
-    Column(
-        modifier = Modifier
-            .size(101.dp, 112.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(bgColor)
-            .border(2.dp, borderColor, RoundedCornerShape(12.dp))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onClick() }
-            .padding(18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(item.iconRes),
-            contentDescription = "교통수단 아이콘",
-            modifier = Modifier.size(48.dp)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = item.name,
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            color = pBlack
-        )
     }
 }

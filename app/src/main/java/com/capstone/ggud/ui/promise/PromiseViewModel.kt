@@ -73,7 +73,7 @@ class PromiseViewModel(
         val hour = uiState.selectedHour ?: return
         val minute = uiState.selecteMinute ?: return
 
-        val iso = buildIsoUtc(dateMillis, hour, minute)
+        val iso = buildLocalDateTimeString(dateMillis, hour, minute)
 
         viewModelScope.launch {
             runCatching {
@@ -92,17 +92,16 @@ class PromiseViewModel(
         }
     }
 
-    private fun buildIsoUtc(datdMillis: Long, hour: Int, minute: Int): String {
+    private fun buildLocalDateTimeString(dateMillis: Long, hour: Int, minute: Int): String {
         val zone = ZoneId.systemDefault()
-        val localDate = Instant.ofEpochMilli(datdMillis).atZone(zone).toLocalDate()
+        val localDate = Instant.ofEpochMilli(dateMillis).atZone(zone).toLocalDate()
 
         val ldt = LocalDateTime.of(
-            LocalDate.of(localDate.year, localDate.month, localDate.dayOfMonth),
+            localDate,
             LocalTime.of(hour, minute)
         )
 
-        val instant = ldt.atZone(zone).toInstant()
-        return DateTimeFormatter.ISO_INSTANT.format(instant)
+        return ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
     }
 }
 
