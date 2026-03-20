@@ -122,7 +122,10 @@ fun PromiseScreen(navController: NavHostController) {
 
     LaunchedEffect(state.createdPromiseId) {
         if (state.createdPromiseId != null) {
-            navController.navigate("waiting")
+            val id = state.createdPromiseId ?: return@LaunchedEffect
+            navController.navigate("waiting/$id") {
+                launchSingleTop = true
+            }
             vm.consumeCreated()
         }
     }

@@ -1,3 +1,12 @@
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -16,6 +25,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val kakaoKey = localProperties.getProperty("KAKAO_REST_API_KEY")
+            ?: throw GradleException("local.properties에 KAKAO_REST_API_KEY가 없습니다.")
+
+        resValue("string", "kakao_rest_api_key", kakaoKey)
     }
 
     buildTypes {
@@ -79,4 +93,7 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
     implementation("com.kakao.sdk:v2-user:2.20.0")
+    implementation("com.kakao.sdk:v2-share:2.20.1")
+
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 }

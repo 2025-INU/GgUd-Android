@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.capstone.ggud.ui.calculate.CalculateScreen
 import com.capstone.ggud.ui.history.HistoryScreen
 import com.capstone.ggud.ui.login.LoginScreen
@@ -25,6 +27,8 @@ import com.capstone.ggud.ui.notification.NotificationScreen
 import com.capstone.ggud.ui.promise.PromiseJoinScreen
 import com.capstone.ggud.ui.promise.PromiseScreen
 import com.capstone.ggud.ui.promise.WaitingRoomScreen
+import com.capstone.ggud.ui.recommendation.MiddlePointScreen
+import com.capstone.ggud.ui.recommendation.RecommendPlaceScreen
 import com.capstone.ggud.ui.theme.GgUdTheme
 import com.kakao.vectormap.KakaoMapSdk
 
@@ -58,12 +62,29 @@ class MainActivity : ComponentActivity() {
                         composable("profile") { ProfileEditScreen(navController = navController) }
 
                         composable("promise") { PromiseScreen(navController = navController) }
-                        composable("promise_join") { PromiseJoinScreen(navController = navController) }
-                        composable("waiting") { WaitingRoomScreen(navController = navController) }
+                        composable(
+                            route = "promise_join/{promiseId}",
+                            arguments = listOf(navArgument("promiseId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val promiseId = backStackEntry.arguments?.getLong("promiseId") ?: 0L
+                            PromiseJoinScreen(
+                                navController = navController,
+                                promiseId = promiseId
+                            )
+                        }
+                        composable(
+                            route = "waiting/{promiseId}",
+                            arguments = listOf(navArgument("promiseId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val promiseId = backStackEntry.arguments?.getLong("promiseId") ?: 0L
+                            WaitingRoomScreen(navController = navController, promiseId = promiseId)
+                        }
 
                         composable("calculate") { CalculateScreen(navController = navController, "약속 이름") }
 
                         composable("map") { KakaoMapScreen() }
+                        composable("middle_point") { MiddlePointScreen(navController = navController) }
+                        composable("recommend_place") { RecommendPlaceScreen(navController = navController) }
                     }
                 }
             }

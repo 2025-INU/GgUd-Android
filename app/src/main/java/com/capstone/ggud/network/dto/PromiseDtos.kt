@@ -49,6 +49,14 @@ data class PagePromiseResponse(
     val empty: Boolean
 )
 
+data class PromiseSummaryResponse(
+    val id: Long,
+    val title: String,
+    val promiseDateTime: String,
+    val hostId: Long,
+    val hostNickname: String
+)
+
 data class SortObject(
     val empty: Boolean,
     val sorted: Boolean,
@@ -62,4 +70,30 @@ data class PageableObject(
     val pageNumber: Int,
     val pageSize: Int,
     val unpaged: Boolean
+)
+
+data class InviteLinkResponse(
+    val inviteCode: String,
+    val inviteUrl: String,
+    val expiredAt: String,
+    val isValid: Boolean
+)
+
+data class ParticipantResponse(
+    val id: Long,
+    val userId: Long,
+    val nickname: String,
+    val profileImageUrl: String?,
+    val departureLatitude: Double?,
+    val departureLongitude: Double?,
+    val departureAddress: String?,
+    val locationSubmitted: Boolean,
+    val host: Boolean,
+    val joinedAt: String
+)
+
+data class UpdateDepartureRequest(
+    val latitude: Double,
+    val longitude: Double,
+    val address: String? = null
 )
