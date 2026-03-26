@@ -20,6 +20,8 @@ object ApiClient {
     @Volatile
     private var promiseApi: PromiseApi? = null
 
+    private var userApi: UserApi? = null
+
     fun getAuthApi(context: Context): AuthApi {
         return authApi ?: synchronized(this) {
             authApi ?: buildRetrofit(context).create(AuthApi::class.java).also {
@@ -32,6 +34,14 @@ object ApiClient {
         return promiseApi ?: synchronized(this) {
             promiseApi ?: buildRetrofit(context).create(PromiseApi::class.java).also {
                 promiseApi = it
+            }
+        }
+    }
+
+    fun getUserApi(context: Context): UserApi {
+        return userApi ?: synchronized(this) {
+            userApi ?: buildRetrofit(context).create(UserApi::class.java).also {
+                userApi = it
             }
         }
     }

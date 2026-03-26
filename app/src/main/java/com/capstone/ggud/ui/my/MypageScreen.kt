@@ -19,27 +19,51 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.capstone.ggud.R
+import com.capstone.ggud.data.UserRepository
+import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.Section
 
 @Composable
 fun MypageScreen(navController: NavHostController) {
+
+    val context = LocalContext.current
+
+    val userApi = remember { ApiClient.getUserApi(context) }
+    val userRepository = remember { UserRepository(userApi) }
+    val viewModel: MyViewModel = viewModel(
+        factory = MyViewModelFactory(userRepository)
+    )
+
+    val uiState by viewModel.uiState.collectAsState()
     val bottomBarHeight = 91.dp
+
+    LaunchedEffect(Unit) {
+        viewModel.getMyPage()
+    }
     
     Box(
         modifier = Modifier
@@ -69,14 +93,32 @@ fun MypageScreen(navController: NavHostController) {
                     .padding(horizontal = 24.dp, vertical = 32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(R.drawable.profile),
-                    contentDescription = "프로필이미지",
-                    modifier = Modifier.size(64.dp)
-                )
+                val profileImageUrl = uiState.user?.profileImageUrl.orEmpty()
+                val nickname = uiState.user?.nickname ?: ""
+
+                if (profileImageUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = profileImageUrl,
+                        contentDescription = "프로필이미지",
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.profile),
+                        error = painterResource(R.drawable.profile)
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.profile),
+                        contentDescription = "프로필이미지",
+                        modifier = Modifier.size(64.dp)
+                    )
+                }
+
                 Spacer(modifier = Modifier.width(16.dp))
+
                 Text(
-                    text = "이은우",
+                    text = if (nickname.isNotBlank()) nickname else "",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF111827)
