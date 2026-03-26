@@ -94,6 +94,8 @@ fun PromiseJoinScreen(
     var selectedLatitude by remember { mutableStateOf<Double?>(null) }
     var selectedLongitude by remember { mutableStateOf<Double?>(null) }
 
+    var isLoadingLocation by remember { mutableStateOf(false) }
+
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<PlaceSearchItem>>(emptyList()) }
     var searchJob by remember { mutableStateOf<Job?>(null) }
@@ -328,6 +330,7 @@ fun PromiseJoinScreen(
                         ) == PackageManager.PERMISSION_GRANTED
 
                         if (finePermission || coarsePermission) {
+                            isLoadingLocation = true
                             fusedLocationClient.getCurrentLocation(
                                 Priority.PRIORITY_HIGH_ACCURACY,
                                 CancellationTokenSource().token
@@ -345,10 +348,14 @@ fun PromiseJoinScreen(
                                         if (address.isNotBlank()) {
                                             location = address
                                             currentAddress = address
+                                            selectedLatitude = loc.latitude
+                                            selectedLongitude = loc.longitude
                                             searchQuery = address
                                             searchResults = emptyList()
                                             showLocation = true
+                                            isLoadingLocation = false
                                         } else {
+                                            isLoadingLocation = false
                                             Toast.makeText(context, "주소 변환에 실패했습니다.", Toast.LENGTH_SHORT).show()
                                         }
                                     }
@@ -360,14 +367,19 @@ fun PromiseJoinScreen(
                                     if (address.isNotBlank()) {
                                         location = address
                                         currentAddress = address
+                                        selectedLatitude = loc.latitude
+                                        selectedLongitude = loc.longitude
                                         searchQuery = address
                                         searchResults = emptyList()
                                         showLocation = true
+                                        isLoadingLocation = false
                                     } else {
+                                        isLoadingLocation = false
                                         Toast.makeText(context, "주소 변환에 실패했습니다.", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                             }.addOnFailureListener {
+                                isLoadingLocation = false
                                 Toast.makeText(context, "위치 정보를 가져오지 못했습니다.", Toast.LENGTH_SHORT).show()
                             }
                         } else {
@@ -493,7 +505,7 @@ fun PromiseJoinScreen(
                 }
             }
 
-            if (showLocation) {
+            if (isLoadingLocation || showLocation) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Box(
                     modifier = Modifier
@@ -504,7 +516,8 @@ fun PromiseJoinScreen(
                         .padding(17.dp)
                 ) {
                     Text(
-                        text = currentAddress.ifBlank { location },
+                        text = if (isLoadingLocation) "현재 위치 불러오는 중..."
+                                else currentAddress.ifBlank { location },
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
                         color = Color(0xFF166534)

@@ -65,7 +65,7 @@ fun MainScreen(navController: NavHostController) {
     var promise by remember { mutableStateOf(true) }
 
     val bottomBarHeight = 91.dp
-    val fabGap = 60.dp
+    val fabGap = 80.dp
 
     Box(modifier = Modifier.fillMaxSize()) {
         //상단바

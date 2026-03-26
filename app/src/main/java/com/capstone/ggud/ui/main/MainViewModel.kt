@@ -45,7 +45,7 @@ class MainViewModel(
 
             val upcomingResult = runCatching {
                 repo.getMyPromises(
-                    status = PromiseStatus.CONFIRMED,
+                    status = PromiseStatus.RECRUITING,
                     page = 0,
                     size = 50,
                     sort = listOf("promiseDateTime,asc")
