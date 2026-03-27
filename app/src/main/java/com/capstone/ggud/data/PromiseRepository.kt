@@ -2,6 +2,7 @@ package com.capstone.ggud.data
 
 import com.capstone.ggud.network.PromiseApi
 import com.capstone.ggud.network.dto.CreatePromiseRequest
+import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
 import com.capstone.ggud.network.dto.PromiseResponse
@@ -25,15 +26,13 @@ class PromiseRepository(
         status: PromiseStatus? = null,
         keyword: String? = null,
         page: Int = 0,
-        size: Int = 20,
-        sort: List<String> = listOf("createdAt,desc")
+        size: Int = 20
     ): PagePromiseResponse {
         return api.getMyPromises(
             status = status,
             keyword = keyword,
             page = page,
-            size = size,
-            sort = sort
+            size = size
         )
     }
 
@@ -63,5 +62,15 @@ class PromiseRepository(
                 address = address
             )
         )
+    }
+
+    suspend fun startMidpointSelection(promiseId: Long) {
+        api.startMidpointSelection(promiseId)
+    }
+
+    suspend fun getMidpointRecommendations(
+        promiseId: Long
+    ): MidpointRecommendationResponse {
+        return api.getMidpointRecommendations(promiseId)
     }
 }

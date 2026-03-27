@@ -38,8 +38,7 @@ class MainViewModel(
                 repo.getMyPromises(
                     status = PromiseStatus.IN_PROGRESS,
                     page = 0,
-                    size = 50,
-                    sort = listOf("promiseDateTime,asc")
+                    size = 50
                 )
             }
 
@@ -47,8 +46,7 @@ class MainViewModel(
                 repo.getMyPromises(
                     status = PromiseStatus.RECRUITING,
                     page = 0,
-                    size = 50,
-                    sort = listOf("promiseDateTime,asc")
+                    size = 50
                 )
             }
 

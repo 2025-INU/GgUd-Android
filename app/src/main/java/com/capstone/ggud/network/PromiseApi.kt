@@ -2,6 +2,7 @@ package com.capstone.ggud.network
 
 import com.capstone.ggud.network.dto.CreatePromiseRequest
 import com.capstone.ggud.network.dto.InviteLinkResponse
+import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
 import com.capstone.ggud.network.dto.PromiseResponse
@@ -24,8 +25,7 @@ interface PromiseApi {
         @Query("status") status: PromiseStatus? = null,
         @Query("keyword") keyword: String? = null,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 20,
-        @Query("sort") sort: List<String> = listOf("createdAt,desc")
+        @Query("size") size: Int = 20
     ): PagePromiseResponse
 
     @GET("/api/v1/promises/{promiseId}/invite/link")
@@ -48,4 +48,14 @@ interface PromiseApi {
         @Path("promiseId") promiseId: Long,
         @Body body: UpdateDepartureRequest
     )
+
+    @POST("/api/v1/promises/{promiseId}/start-midpoint-selection")
+    suspend fun startMidpointSelection(
+        @Path("promiseId") promiseId: Long
+    )
+
+    @GET("/api/v1/promises/{promiseId}/midpoint/recommendations")
+    suspend fun getMidpointRecommendations(
+        @Path("promiseId") promiseId: Long
+    ): MidpointRecommendationResponse
 }

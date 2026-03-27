@@ -29,23 +29,32 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
+import com.capstone.ggud.data.PromiseRepository
+import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.TopBar
 import com.capstone.ggud.ui.map.KakaoMapScreen
 import com.capstone.ggud.ui.theme.pBlack
+import kotlinx.coroutines.delay
 
 data class MiddlePointCardUi(
     val title: String,
@@ -55,7 +64,25 @@ data class MiddlePointCardUi(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MiddlePointScreen(navController: NavHostController) {
+fun MiddlePointScreen(
+    navController: NavHostController,
+    promiseId: Long
+) {
+
+    val context = LocalContext.current
+
+    val repo = PromiseRepository(ApiClient.getPromiseApi(context))
+    val vm: MiddlePointViewModel = viewModel(
+        factory = MiddlePointViewModelFactory(repo, promiseId)
+    )
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
+
+    var showGuideBanner by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(5000)
+        showGuideBanner = false
+    }
 
     val peekHeight = 300.dp
 
@@ -73,18 +100,7 @@ fun MiddlePointScreen(navController: NavHostController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding(),
-                items = listOf(
-                    MiddlePointCardUi(
-                        title = "강남역 4번 출구 근처",
-                        address = "서울특별시 강남구 강남대로 396",
-                        avgMinutes = 12
-                    ),
-                    MiddlePointCardUi(
-                        title = "역삼역 2번 출구 근처",
-                        address = "서울특별시 강남구 테헤란로 123",
-                        avgMinutes = 15
-                    )
-                ),
+                items = uiState.items,
                 onClickItem = { navController.navigate("recommend_place") }
             )
         }
@@ -103,14 +119,16 @@ fun MiddlePointScreen(navController: NavHostController) {
                 navController = navController
             )
 
-            GuideBanner(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 90.dp)
-                    .width(327.dp)
-                    .wrapContentHeight()
-                    .heightIn(min = 106.dp)
-            )
+            if (showGuideBanner) {
+                GuideBanner(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 90.dp)
+                        .width(327.dp)
+                        .wrapContentHeight()
+                        .heightIn(min = 106.dp)
+                )
+            }
         }
     }
 }
@@ -229,7 +247,7 @@ private fun MiddlePointCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.title,
+                    text = "${item.title}역",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = pBlack
