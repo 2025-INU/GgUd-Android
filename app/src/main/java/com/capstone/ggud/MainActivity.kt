@@ -83,7 +83,12 @@ class MainActivity : ComponentActivity() {
                         composable("calculate") { CalculateScreen(navController = navController, "약속 이름") }
 
                         composable("map") { KakaoMapScreen() }
-                        composable("middle_point") { MiddlePointScreen(navController = navController) }
+                        composable("middle_point/{promiseId}",
+                            arguments = listOf(navArgument("promiseId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val promiseId = backStackEntry.arguments?.getLong("promiseId") ?: 0L
+                            MiddlePointScreen(navController = navController, promiseId = promiseId)
+                        }
                         composable("recommend_place") { RecommendPlaceScreen(navController = navController) }
                     }
                 }

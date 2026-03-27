@@ -2,6 +2,7 @@ package com.capstone.ggud.network
 
 import com.capstone.ggud.network.dto.CreatePromiseRequest
 import com.capstone.ggud.network.dto.InviteLinkResponse
+import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
 import com.capstone.ggud.network.dto.PromiseResponse
@@ -52,4 +53,9 @@ interface PromiseApi {
     suspend fun startMidpointSelection(
         @Path("promiseId") promiseId: Long
     )
+
+    @GET("/api/v1/promises/{promiseId}/midpoint/recommendations")
+    suspend fun getMidpointRecommendations(
+        @Path("promiseId") promiseId: Long
+    ): MidpointRecommendationResponse
 }

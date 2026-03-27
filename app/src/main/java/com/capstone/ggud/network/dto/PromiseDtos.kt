@@ -97,3 +97,34 @@ data class UpdateDepartureRequest(
     val longitude: Double,
     val address: String? = null
 )
+
+data class Coordinate(
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class MidpointRecommendationResponse(
+    val calculatedMidpoint: Coordinate,
+    val recommendedStations: List<StationRecommendation>,
+    val participantCount: Int
+)
+
+data class ParticipantTravelInfo(
+    val userId: Long,
+    val nickname: String,
+    val departureAddress: String,
+    val travelTimeMinutes: Int,
+    val distanceMeters: Int
+)
+
+data class StationRecommendation(
+    val stationId: Long,
+    val stationName: String,
+    val lineName: String,
+    val latitude: Double,
+    val longitude: Double,
+    val distanceFromMidpoint: Double,
+    val averageDistanceFromParticipants: Double,
+    val participantTravelInfos: List<ParticipantTravelInfo>,
+    val averageTravelTimeMinutes: Int
+)

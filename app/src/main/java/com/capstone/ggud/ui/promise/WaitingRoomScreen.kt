@@ -95,7 +95,7 @@ fun WaitingRoomScreen(
 
     LaunchedEffect(uiState.midpointStarted) {
         if (uiState.midpointStarted) {
-            navController.navigate("middle_point")
+            navController.navigate("middle_point/$promiseId")
             vm.clearMidpointStarted()
         }
     }
