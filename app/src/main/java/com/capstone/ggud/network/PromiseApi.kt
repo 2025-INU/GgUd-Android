@@ -24,8 +24,7 @@ interface PromiseApi {
         @Query("status") status: PromiseStatus? = null,
         @Query("keyword") keyword: String? = null,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 20,
-        @Query("sort") sort: List<String> = listOf("createdAt,desc")
+        @Query("size") size: Int = 20
     ): PagePromiseResponse
 
     @GET("/api/v1/promises/{promiseId}/invite/link")

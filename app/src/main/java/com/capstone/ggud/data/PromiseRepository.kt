@@ -25,15 +25,13 @@ class PromiseRepository(
         status: PromiseStatus? = null,
         keyword: String? = null,
         page: Int = 0,
-        size: Int = 20,
-        sort: List<String> = listOf("createdAt,desc")
+        size: Int = 20
     ): PagePromiseResponse {
         return api.getMyPromises(
             status = status,
             keyword = keyword,
             page = page,
-            size = size,
-            sort = sort
+            size = size
         )
     }
 

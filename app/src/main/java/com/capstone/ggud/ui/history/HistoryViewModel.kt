@@ -41,9 +41,9 @@ class HistoryViewModel(
             runCatching {
                 repo.getMyPromises(
                     status = PromiseStatus.COMPLETED,
+                    keyword = keyword,
                     page = 0,
-                    size = 50,
-                    sort = listOf("createdAt,desc")
+                    size = 50
                 )
             }.onSuccess { page ->
                 _uiState.value = _uiState.value.copy(
