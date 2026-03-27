@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,9 +24,13 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,10 +41,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -63,6 +71,10 @@ fun MainScreen(navController: NavHostController) {
     val uiState by vm.uiState.collectAsState()
 
     var promise by remember { mutableStateOf(true) }
+
+    var showPromiseDialog by remember { mutableStateOf(false) }
+    var showJoinDialog by remember { mutableStateOf(false) }
+    var joinCode by remember { mutableStateOf("") }
 
     val bottomBarHeight = 91.dp
     val fabGap = 80.dp
@@ -159,9 +171,125 @@ fun MainScreen(navController: NavHostController) {
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    navController.navigate("promise")
+                    showPromiseDialog = true
                 }
         )
+
+        if (showPromiseDialog) { //약속 다이얼로그
+            AlertDialog(
+                onDismissRequest = { showPromiseDialog = false }, //바깥영역 눌렀을때
+                containerColor = Color.White, //배경
+                title = { Text("약속") },
+                text = { Text("원하시는 기능을 선택해주세요.")},
+                confirmButton = { //오른쪽 버튼
+                    TextButton(
+                        onClick = {
+                            showPromiseDialog = false
+                            navController.navigate("promise")
+                        }
+                    ) { Text("약속 생성") }
+                },
+                dismissButton = { //왼쪽 버튼
+                    TextButton(
+                        onClick = {
+                            showPromiseDialog = false
+                            showJoinDialog = true
+                        }
+                    ) { Text("약속 참여") }
+                }
+            )
+        }
+
+        if (showJoinDialog) { //약속참여 다이얼로그 (기능X)
+            AlertDialog(
+                onDismissRequest = {
+                    showJoinDialog = false
+                    joinCode = "" //참여코드 초기화
+                },
+                containerColor = Color.White,
+                title = { Text("약속 참여") },
+                text = {
+                    Column {
+                        Text("카카오톡으로 받은 참여 코드를 입력해주세요.")
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Box( //참여코드 입력칸
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            BasicTextField( //실제로는 텍스트필드 하나지만 4칸처럼 보이도록
+                                value = joinCode, //입력값
+                                onValueChange = { //사용자가 입력할 때마다 호출
+                                    if (it.length <= 4) {
+                                        joinCode = it
+                                    }
+                                },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions( //숫자 키보드
+                                    keyboardType = KeyboardType.Number
+                                ),
+                                textStyle = TextStyle( //실제 텍스트는 투명처리, 직접 4칸을 그려야하기 때문에
+                                    color = Color.Transparent
+                                ),
+                                cursorBrush = SolidColor(Color.Transparent), //커서도 투명처리
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp),
+                                decorationBox = { //UI 직접 그려주는 영역
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        //가로 정렬 칸 간격 12, 가운데 정렬
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+                                    ) {
+                                        repeat(4) { index -> //4칸 반복 생성
+                                            //현재 칸에 들어갈 문자
+                                            //joinCode가 12면, 0번칸에 1, 1번칸에 2, 나머지는 빈문자열
+                                            val char = joinCode.getOrNull(index)?.toString() ?: ""
+                                            val isFocused = joinCode.length == index //현재 칸 위치 표시, joinCode 길이로
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(width = 56.dp, height = 64.dp)
+                                                    .border(
+                                                        width = 1.5.dp,
+                                                        color = if (isFocused) Color.Black else Color(0xFFE5E7EB),
+                                                        shape = RoundedCornerShape(12.dp)
+                                                    )
+                                                    .background(
+                                                        Color.White,
+                                                        RoundedCornerShape(12.dp)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = char,
+                                                    fontSize = 22.sp,
+                                                    color = Color(0xFF111827),
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = { showJoinDialog = false }
+                    ) { Text("확인") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showJoinDialog = false
+                            joinCode = ""
+                        }
+                    ) { Text("취소") }
+                }
+            )
+        }
 
         Box( //하단바
             modifier = Modifier

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -254,7 +255,10 @@ fun PromiseScreen(navController: NavHostController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .size(327.dp, 58.dp)
-                        .clickable {
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
                             clearFocusStates()
                             nameFocusRequester.requestFocus()
                         }
@@ -330,7 +334,10 @@ fun PromiseScreen(navController: NavHostController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .size(327.dp, 58.dp)
-                        .clickable {
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
                             focusManager.clearFocus()
                             isTimeFocused = false
                             isDateFocused = true
@@ -377,7 +384,10 @@ fun PromiseScreen(navController: NavHostController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .size(327.dp, 58.dp)
-                        .clickable {
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
                             focusManager.clearFocus()
                             isDateFocused = false
                             isTimeFocused = true
@@ -422,7 +432,9 @@ fun PromiseScreen(navController: NavHostController) {
                 contentDescription = "약속 생성",
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .scale(0.97f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .aspectRatio(327f / 53f)
                     .clickable(
                         enabled = isFormValid,
                         indication = null,
@@ -437,7 +449,7 @@ fun PromiseScreen(navController: NavHostController) {
                 color = Color(0xFF6B7280),
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .offset(y=-(8).dp)
+                    .padding(top = 12.dp)
             )
         }
     }

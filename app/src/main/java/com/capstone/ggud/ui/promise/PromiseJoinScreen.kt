@@ -532,7 +532,8 @@ fun PromiseJoinScreen(
                 contentDescription = "약속 참여",
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .scale(1.08f)
+                    .fillMaxWidth()
+                    .aspectRatio(327f / 53f)
                     .clickable(
                         enabled = canJoin,
                         indication = null,
@@ -560,7 +561,7 @@ fun PromiseJoinScreen(
                 color = Color(0xFF6B7280),
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .offset(y=-(8).dp)
+                    .padding(top = 12.dp)
             )
         }
     }
