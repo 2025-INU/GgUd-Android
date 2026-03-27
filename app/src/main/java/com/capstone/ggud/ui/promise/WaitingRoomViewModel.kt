@@ -21,6 +21,8 @@ data class WaitingRoomUiState(
     val participantsLoading: Boolean = false,
     val participants: List<ParticipantResponse> = emptyList(),
 
+    val midpointStarted: Boolean = false,
+
     val error: String? = null
 ) {
     val participantCount: Int get() = participants.size
@@ -110,5 +112,33 @@ class WaitingRoomViewModel(application: Application)
                 )
             }
         }
+    }
+
+    //중간지점 페이지 이동
+    fun startMidpointSelection(promiseId: Long) {
+        _uiState.value = _uiState.value.copy(
+            midpointStarted = false,
+            error = null
+        )
+
+        viewModelScope.launch {
+            runCatching {
+                repo.startMidpointSelection(promiseId)
+            }.onSuccess {
+                _uiState.value = _uiState.value.copy(
+                    midpointStarted = true,
+                    error = null
+                )
+            }.onFailure { e ->
+                _uiState.value = _uiState.value.copy(
+                    midpointStarted = false,
+                    error = e.message ?: "중간지점 이동 실패"
+                )
+            }
+        }
+    }
+
+    fun clearMidpointStarted() {
+        _uiState.value = _uiState.value.copy(midpointStarted = false)
     }
 }

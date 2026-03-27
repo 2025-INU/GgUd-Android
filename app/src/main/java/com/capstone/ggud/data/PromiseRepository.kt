@@ -62,4 +62,8 @@ class PromiseRepository(
             )
         )
     }
+
+    suspend fun startMidpointSelection(promiseId: Long) {
+        api.startMidpointSelection(promiseId)
+    }
 }

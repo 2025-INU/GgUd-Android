@@ -93,6 +93,13 @@ fun WaitingRoomScreen(
         }
     }
 
+    LaunchedEffect(uiState.midpointStarted) {
+        if (uiState.midpointStarted) {
+            navController.navigate("middle_point")
+            vm.clearMidpointStarted()
+        }
+    }
+
     val allSubmitted = uiState.participants.isNotEmpty() && uiState.participants.all { it.locationSubmitted }
 
     val titleText = uiState.summary?.title ?: "약속 이름"
@@ -258,7 +265,7 @@ fun WaitingRoomScreen(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) {
-                                navController.navigate("middle_point")
+                                vm.startMidpointSelection(promiseId)
                             }
                     ) {
                         Text(

@@ -47,4 +47,9 @@ interface PromiseApi {
         @Path("promiseId") promiseId: Long,
         @Body body: UpdateDepartureRequest
     )
+
+    @POST("/api/v1/promises/{promiseId}/start-midpoint-selection")
+    suspend fun startMidpointSelection(
+        @Path("promiseId") promiseId: Long
+    )
 }
