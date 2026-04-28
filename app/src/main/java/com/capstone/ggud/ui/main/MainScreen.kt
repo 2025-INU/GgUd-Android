@@ -57,6 +57,9 @@ import com.capstone.ggud.R
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.CardContent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(navController: NavHostController) {
@@ -217,31 +220,31 @@ fun MainScreen(navController: NavHostController) {
                             modifier = Modifier.fillMaxWidth(),
                             contentAlignment = Alignment.Center
                         ) {
-                            BasicTextField( //실제로는 텍스트필드 하나지만 4칸처럼 보이도록
+                            BasicTextField( //실제로는 텍스트필드 하나지만 6칸처럼 보이도록
                                 value = joinCode, //입력값
                                 onValueChange = { //사용자가 입력할 때마다 호출
-                                    if (it.length <= 4) {
+                                    if (it.length <= 6) {
                                         joinCode = it
                                     }
                                 },
                                 singleLine = true,
-                                keyboardOptions = KeyboardOptions( //숫자 키보드
-                                    keyboardType = KeyboardType.Number
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Ascii
                                 ),
-                                textStyle = TextStyle( //실제 텍스트는 투명처리, 직접 4칸을 그려야하기 때문에
+                                textStyle = TextStyle( //실제 텍스트는 투명처리, 직접 6칸을 그려야하기 때문에
                                     color = Color.Transparent
                                 ),
                                 cursorBrush = SolidColor(Color.Transparent), //커서도 투명처리
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(64.dp),
+                                    .height(56.dp),
                                 decorationBox = { //UI 직접 그려주는 영역
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         //가로 정렬 칸 간격 12, 가운데 정렬
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
                                     ) {
-                                        repeat(4) { index -> //4칸 반복 생성
+                                        repeat(6) { index -> //6칸 반복 생성
                                             //현재 칸에 들어갈 문자
                                             //joinCode가 12면, 0번칸에 1, 1번칸에 2, 나머지는 빈문자열
                                             val char = joinCode.getOrNull(index)?.toString() ?: ""
@@ -249,7 +252,7 @@ fun MainScreen(navController: NavHostController) {
 
                                             Box(
                                                 modifier = Modifier
-                                                    .size(width = 56.dp, height = 64.dp)
+                                                    .size(width = 36.dp, height = 52.dp)
                                                     .border(
                                                         width = 1.5.dp,
                                                         color = if (isFocused) Color.Black else Color(0xFFE5E7EB),
@@ -263,7 +266,7 @@ fun MainScreen(navController: NavHostController) {
                                             ) {
                                                 Text(
                                                     text = char,
-                                                    fontSize = 22.sp,
+                                                    fontSize = 20.sp,
                                                     color = Color(0xFF111827),
                                                     fontWeight = FontWeight.Medium
                                                 )
@@ -277,7 +280,22 @@ fun MainScreen(navController: NavHostController) {
                 },
                 confirmButton = {
                     TextButton(
-                        onClick = { showJoinDialog = false }
+                        onClick = {
+                            val code = joinCode.trim()
+
+                            CoroutineScope(Dispatchers.Main).launch {
+                                runCatching {
+                                    repository.getPromiseByInviteCode(code)
+                                }.onSuccess { promise ->
+                                    showJoinDialog = false
+                                    joinCode = ""
+
+                                    navController.navigate("waiting/${promise.id}")
+                                }.onFailure {
+                                    //TODO: 에러 처리
+                                }
+                            }
+                        }
                     ) { Text("확인") }
                 },
                 dismissButton = {

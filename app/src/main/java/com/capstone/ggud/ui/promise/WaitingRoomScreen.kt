@@ -78,10 +78,10 @@ fun WaitingRoomScreen(
         vm.fetchParticipants(promiseId)
     }
 
-    LaunchedEffect(uiState.inviteLink) {
-        val link = uiState.inviteLink ?: return@LaunchedEffect
-        shareWithKakaoTalk(context, link)
-        vm.clearInviteLink()
+    LaunchedEffect(uiState.inviteCode) {
+        val code = uiState.inviteCode ?: return@LaunchedEffect
+        shareWithKakaoTalk(context, code)
+        vm.clearInviteCode()
     }
 
     LaunchedEffect(locationSubmitted) {
@@ -180,20 +180,20 @@ fun WaitingRoomScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Image(
-                painter = painterResource(R.drawable.btn_kakao_link),
-                contentDescription = "링크공유 버튼",
+                painter = painterResource(R.drawable.btn_kakao_code),
+                contentDescription = "코드공유 버튼",
                 modifier = Modifier
                     .scale(1.08f)
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        vm.fetchInviteLink(promiseId)
+                        vm.fetchInviteCode(promiseId)
                     }
             )
 
             Text(
-                text = "링크를 통해 친구들이 약속에 참여할 수 있어요",
+                text = "코드를 통해 친구들이 약속에 참여할 수 있어요",
                 fontSize = 14.sp,
                 color = Color(0xFF6B7280),
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -323,7 +323,7 @@ fun PeopleCard(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = if (enterLocation) "위치 입력 완료" else "위치 입력하기",
+                text = if (enterLocation) "위치 입력 완료" else "클릭해서 위치 입력하기",
                 fontSize = 14.sp,
                 color = Color(0xFF4B5563)
             )
@@ -339,13 +339,13 @@ fun PeopleCard(
     }
 }
 
-private fun shareWithKakaoTalk(context: Context, inviteUrl: String) {
+private fun shareWithKakaoTalk(context: Context, inviteCode: String) {
     //카카오 메시지 템플릿
     val template = TextTemplate(
-        text = "약속에 초대되었어요!\n아래 링크로 참여해 주세요",
+        text = "약속에 초대되었어요!\n초대 코드: $inviteCode\n앱에서 초대 코드를 입력해 참여해 주세요.",
         link = Link(
-            webUrl = inviteUrl,
-            mobileWebUrl = inviteUrl
+            webUrl = null,
+            mobileWebUrl = null
         )
     )
 
