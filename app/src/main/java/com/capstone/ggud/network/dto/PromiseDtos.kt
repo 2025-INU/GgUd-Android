@@ -128,3 +128,9 @@ data class StationRecommendation(
     val participantTravelInfos: List<ParticipantTravelInfo>,
     val averageTravelTimeMinutes: Int
 )
+
+data class InviteCodeResponse(
+    val inviteCode: String,
+    val expiredAt: String,
+    val isValid: Boolean
+)

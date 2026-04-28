@@ -73,4 +73,12 @@ class PromiseRepository(
     ): MidpointRecommendationResponse {
         return api.getMidpointRecommendations(promiseId)
     }
+
+    suspend fun getInviteCode(promiseId: Long): String {
+        return api.getInviteCode(promiseId).inviteCode
+    }
+
+    suspend fun getPromiseByInviteCode(inviteCode: String): PromiseResponse {
+        return api.getPromiseByInviteCode(inviteCode.trim())
+    }
 }

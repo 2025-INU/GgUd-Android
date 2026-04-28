@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 data class WaitingRoomUiState(
     val loading: Boolean = false,
-    val inviteLink: String? = null,
+    val inviteCode: String? = null,
 
     val summaryLoading: Boolean = false,
     val summary: PromiseSummaryResponse? = null,
@@ -64,31 +64,31 @@ class WaitingRoomViewModel(application: Application)
         }
     }
 
-    //초대 링크
-    fun fetchInviteLink(promiseId: Long) {
+    //초대 코드
+    fun fetchInviteCode(promiseId: Long) {
         _uiState.value = _uiState.value.copy(loading = true, error = null)
 
         viewModelScope.launch {
             runCatching {
-                repo.getInviteLink(promiseId)
-            }.onSuccess { link ->
+                repo.getInviteCode(promiseId)
+            }.onSuccess { code ->
                 _uiState.value = _uiState.value.copy(
                     loading = false,
-                    inviteLink = link,
+                    inviteCode = code,
                     error = null
                 )
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
                     loading = false,
-                    inviteLink = null,
-                    error = e.message ?: "초대 링크 조회 실패"
+                    inviteCode = null,
+                    error = e.message ?: "초대 코드 조회 실패"
                 )
             }
         }
     }
 
-    fun clearInviteLink() {
-        _uiState.value = _uiState.value.copy(inviteLink = null)
+    fun clearInviteCode() {
+        _uiState.value = _uiState.value.copy(inviteCode = null)
     }
 
     //참여자 목록
