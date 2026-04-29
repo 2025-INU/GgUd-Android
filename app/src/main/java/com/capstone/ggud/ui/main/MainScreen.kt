@@ -1,5 +1,6 @@
 package com.capstone.ggud.ui.main
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,6 +57,7 @@ import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
+import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.ui.components.CardContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -287,12 +289,24 @@ fun MainScreen(navController: NavHostController) {
                                 runCatching {
                                     repository.getPromiseByInviteCode(code)
                                 }.onSuccess { promise ->
-                                    showJoinDialog = false
-                                    joinCode = ""
+                                    if (promise.status == PromiseStatus.RECRUITING) {
+                                        showJoinDialog = false
+                                        joinCode = ""
 
-                                    navController.navigate("waiting/${promise.id}")
+                                        navController.navigate("waiting/${promise.id}")
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "이미 진행 중이거나 참여할 수 없는 약속입니다.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }.onFailure {
-                                    //TODO: 에러 처리
+                                    Toast.makeText(
+                                        context,
+                                        "존재하지 않는 약속입니다.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         }

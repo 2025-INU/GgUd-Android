@@ -53,6 +53,7 @@ import com.kakao.sdk.share.WebSharerClient
 import com.kakao.sdk.share.model.SharingResult
 import com.kakao.sdk.template.model.Link
 import com.kakao.sdk.template.model.TextTemplate
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -75,7 +76,13 @@ fun WaitingRoomScreen(
 
     LaunchedEffect(promiseId) {
         vm.fetchSummary(promiseId)
-        vm.fetchParticipants(promiseId)
+    }
+
+    LaunchedEffect(promiseId) {
+        while (true) {
+            vm.fetchParticipants(promiseId)
+            delay(3000)
+        }
     }
 
     LaunchedEffect(uiState.inviteCode) {

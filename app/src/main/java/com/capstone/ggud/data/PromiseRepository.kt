@@ -36,10 +36,6 @@ class PromiseRepository(
         )
     }
 
-    suspend fun getInviteLink(promiseId: Long): String {
-        return api.getInviteLink(promiseId).inviteUrl
-    }
-
     suspend fun getPromiseParticipants(promiseId: Long): List<ParticipantResponse> {
         return api.getPromiseParticipants(promiseId)
     }
