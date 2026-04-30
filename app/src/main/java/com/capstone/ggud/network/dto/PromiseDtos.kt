@@ -1,5 +1,7 @@
 package com.capstone.ggud.network.dto
 
+import com.google.gson.annotations.SerializedName
+
 //POST /api/v1/promises
 data class CreatePromiseRequest(
     val title: String,
@@ -29,7 +31,8 @@ enum class PromiseStatus {
     RECRUITING,
     WAITING_LOCATIONS,
     SELECTING_MIDPOINT,
-    CONFIRMED,
+    MIDPOINT_CONFIRMED,
+    PLACE_CONFIRMED,
     IN_PROGRESS,
     COMPLETED
 }
@@ -133,4 +136,52 @@ data class InviteCodeResponse(
     val inviteCode: String,
     val expiredAt: String,
     val isValid: Boolean
+)
+
+data class PlaceRecommendationRequest(
+    val query: String,
+    val tab: PlaceRecommendationTab
+)
+
+enum class PlaceRecommendationTab {
+    ALL,
+    RESTAURANT,
+    CAFE,
+    BAR
+}
+
+data class PlaceRecommendationResponse(
+    val recommendations: List<PlaceRecommendationItem>,
+    @SerializedName("promise_id")
+    val promiseId: Long
+)
+
+data class PlaceRecommendationItem(
+    val category: String,
+    val address: String,
+    val latitude: Double,
+    val longitude: Double,
+    @SerializedName("place_id")
+    val placeId: String,
+    @SerializedName("place_name")
+    val placeName: String,
+    @SerializedName("image_url")
+    val imageUrl: String,
+    @SerializedName("ai_summary")
+    val aiSummary: String,
+    @SerializedName("ai_score")
+    val aiScore: Double,
+    @SerializedName("distance_from_midpoint")
+    val distanceFromMidpoint: Double
+)
+
+data class ConfirmMidpointRequest(
+    val stationId: Long
+)
+
+data class PlaceConfirmRequest(
+    val placeId: String,
+    val placeName: String,
+    val latitude: Double,
+    val longitude: Double
 )

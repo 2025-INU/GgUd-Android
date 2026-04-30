@@ -1,7 +1,6 @@
 package com.capstone.ggud
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +18,7 @@ import com.capstone.ggud.ui.history.HistoryScreen
 import com.capstone.ggud.ui.login.LoginScreen
 import com.capstone.ggud.ui.login.StartScreen
 import com.capstone.ggud.ui.main.MainScreen
+import com.capstone.ggud.ui.main.OngoingPromiseScreen
 import com.capstone.ggud.ui.map.KakaoMapScreen
 import com.capstone.ggud.ui.my.MypageScreen
 import com.capstone.ggud.ui.my.NotifySettingScreen
@@ -30,7 +30,7 @@ import com.capstone.ggud.ui.promise.WaitingRoomScreen
 import com.capstone.ggud.ui.recommendation.MiddlePointScreen
 import com.capstone.ggud.ui.recommendation.RecommendPlaceScreen
 import com.capstone.ggud.ui.theme.GgUdTheme
-import com.kakao.vectormap.KakaoMapSdk
+import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
                         composable("login") { LoginScreen(navController = navController) }
 
                         composable("home") { MainScreen(navController = navController) }
+                        composable("ongoing") { OngoingPromiseScreen(navController = navController) }
 
                         composable("notification") { NotificationScreen(navController = navController) }
 
@@ -89,7 +90,22 @@ class MainActivity : ComponentActivity() {
                             val promiseId = backStackEntry.arguments?.getLong("promiseId") ?: 0L
                             MiddlePointScreen(navController = navController, promiseId = promiseId)
                         }
-                        composable("recommend_place") { RecommendPlaceScreen(navController = navController) }
+                        composable(
+                            route = "recommend_place/{promiseId}/{stationName}",
+                            arguments = listOf(
+                                navArgument("promiseId") { type = NavType.LongType },
+                                navArgument("stationName") { type = NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            val promiseId = backStackEntry.arguments?.getLong("promiseId") ?: 0L
+                            val stationName = backStackEntry.arguments?.getString("stationName") ?: ""
+
+                            RecommendPlaceScreen(
+                                navController = navController,
+                                promiseId = promiseId,
+                                stationName = stationName
+                            )
+                        }
                     }
                 }
             }

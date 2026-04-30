@@ -1,10 +1,15 @@
 package com.capstone.ggud.data
 
 import com.capstone.ggud.network.PromiseApi
+import com.capstone.ggud.network.dto.ConfirmMidpointRequest
 import com.capstone.ggud.network.dto.CreatePromiseRequest
 import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
+import com.capstone.ggud.network.dto.PlaceConfirmRequest
+import com.capstone.ggud.network.dto.PlaceRecommendationRequest
+import com.capstone.ggud.network.dto.PlaceRecommendationResponse
+import com.capstone.ggud.network.dto.PlaceRecommendationTab
 import com.capstone.ggud.network.dto.PromiseResponse
 import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.network.dto.PromiseSummaryResponse
@@ -76,5 +81,53 @@ class PromiseRepository(
 
     suspend fun getPromiseByInviteCode(inviteCode: String): PromiseResponse {
         return api.getPromiseByInviteCode(inviteCode.trim())
+    }
+
+    suspend fun getPlaceRecommendations(
+        promiseId: Long,
+        query: String = "",
+        tab: PlaceRecommendationTab = PlaceRecommendationTab.ALL
+    ): PlaceRecommendationResponse {
+        return api.getPlaceRecommendations(
+            promiseId = promiseId,
+            body = PlaceRecommendationRequest(
+                query = query,
+                tab = tab
+            )
+        )
+    }
+
+    suspend fun confirmMidpoint(
+        promiseId: Long,
+        stationId: Long
+    ): Result<Unit> {
+        return runCatching {
+            val response = api.confirmMidpoint(
+                promiseId = promiseId,
+                request = ConfirmMidpointRequest(stationId)
+            )
+
+            if (!response.isSuccessful) {
+                throw Exception("중간지점 확정 실패")
+            }
+        }
+    }
+
+    suspend fun confirmPlace(
+        promiseId: Long,
+        placeId: String,
+        placeName: String,
+        latitude: Double,
+        longitude: Double
+    ) {
+        api.confirmPlace(
+            promiseId = promiseId,
+            body = PlaceConfirmRequest(
+                placeId = placeId,
+                placeName = placeName,
+                latitude = latitude,
+                longitude = longitude
+            )
+        )
     }
 }

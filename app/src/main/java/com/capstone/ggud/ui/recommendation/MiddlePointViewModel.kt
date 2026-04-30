@@ -27,6 +27,23 @@ class MiddlePointViewModel(
         loadMidpointRecommendations()
     }
 
+    fun confirmMidpoint(
+        stationId: Long,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            repo.confirmMidpoint(
+                promiseId = promiseId,
+                stationId = stationId
+            ).onSuccess {
+                onSuccess()
+            }.onFailure {
+                onError(it.message ?: "중간지점 확정에 실패했습니다.")
+            }
+        }
+    }
+
     fun loadMidpointRecommendations() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(

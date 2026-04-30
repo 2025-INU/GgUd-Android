@@ -42,6 +42,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -60,30 +63,52 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.capstone.ggud.R
+import com.capstone.ggud.data.PromiseRepository
+import com.capstone.ggud.network.ApiClient
+import com.capstone.ggud.network.dto.PlaceRecommendationItem
+import com.capstone.ggud.network.dto.PlaceRecommendationTab
 import com.capstone.ggud.ui.map.KakaoMapScreen
 import com.capstone.ggud.ui.theme.pBlack
 
-data class RecommendedPlaceUiModel(
-    val id: Int,
-    val name: String,
-    val description: String,
-    val rating: Double,
-    val walkingMinutes: Int,
-    val priceText: String,
-    val category: String
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecommendPlaceScreen(navController: NavHostController) {
+fun RecommendPlaceScreen(
+    navController: NavHostController,
+    promiseId: Long,
+    stationName: String
+) {
+    val context = LocalContext.current
+    val promiseRepository = remember {
+        PromiseRepository(ApiClient.getPromiseApi(context))
+    }
+
+    val vm: RecommendPlaceViewModel = viewModel(
+        factory = RecommendPlaceViewModel.Factory(
+            promiseId = promiseId,
+            repository = promiseRepository
+        )
+    )
+
+    val uiState by vm.uiState.collectAsState()
 
     val peekHeight = 250.dp
     val scaffoldState = rememberBottomSheetScaffoldState()
+    val selectedCount = uiState.selectedPlaceIds.size
 
-    var selectedPlaceIds by remember { mutableStateOf(setOf<Int>()) }
-    val selectedCount = selectedPlaceIds.size
+    LaunchedEffect(uiState.confirmSuccess) {
+        if (uiState.confirmSuccess) {
+            vm.clearConfirmSuccess()
+            navController.navigate("home") {
+                popUpTo("home") {
+                    inclusive = true
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -98,15 +123,11 @@ fun RecommendPlaceScreen(navController: NavHostController) {
             sheetContent = {
                 BottomSheetContent(
                     modifier = Modifier.fillMaxWidth(),
-                    selectedPlaceIds = selectedPlaceIds,
-                    onTogglePlace = { placeId ->
-                        selectedPlaceIds =
-                            if (placeId in selectedPlaceIds) {
-                                selectedPlaceIds - placeId
-                            } else {
-                                selectedPlaceIds + placeId
-                            }
-                    }
+                    places = uiState.places,
+                    isLoading = uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    selectedPlaceIds = uiState.selectedPlaceIds,
+                    onTogglePlace = vm::togglePlace
                 )
             }
         ) { innerPadding ->
@@ -117,7 +138,15 @@ fun RecommendPlaceScreen(navController: NavHostController) {
             ) {
                 KakaoMapScreen(modifier = Modifier.matchParentSize())
 
-                RecommendTopBar(navController)
+                RecommendTopBar(
+                    navController = navController,
+                    stationName = stationName,
+                    selectedTab = uiState.selectedTab,
+                    aiQuery = uiState.aiQuery,
+                    onTabSelected = vm::selectTab,
+                    onAiRecommend = vm::requestAiRecommendation,
+                    onClearAiQuery = vm::clearAiQuery
+                )
             }
         }
 
@@ -148,7 +177,7 @@ fun RecommendPlaceScreen(navController: NavHostController) {
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            navController.navigate("home")
+                            vm.confirmAnySelectedPlace()
                         }
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     contentAlignment = Alignment.Center
@@ -180,15 +209,22 @@ fun RecommendPlaceScreen(navController: NavHostController) {
 }
 
 @Composable
-private fun RecommendTopBar(navController: NavHostController) {
+private fun RecommendTopBar(
+    navController: NavHostController,
+    stationName: String,
+    selectedTab: PlaceRecommendationTab,
+    aiQuery: String,
+    onTabSelected: (PlaceRecommendationTab) -> Unit,
+    onAiRecommend: (String) -> Unit,
+    onClearAiQuery: () -> Unit
+) {
     val types = listOf(
-        "전체" to R.drawable.ic_all,
-        "식당" to R.drawable.ic_restaurant,
-        "카페" to R.drawable.ic_cafe,
-        "술집" to R.drawable.ic_bar
+        PlaceTypeUiModel("전체", R.drawable.ic_all, PlaceRecommendationTab.ALL),
+        PlaceTypeUiModel("식당", R.drawable.ic_restaurant, PlaceRecommendationTab.RESTAURANT),
+        PlaceTypeUiModel("카페", R.drawable.ic_cafe, PlaceRecommendationTab.CAFE),
+        PlaceTypeUiModel("술집", R.drawable.ic_bar, PlaceRecommendationTab.BAR)
     )
 
-    var selectedType by remember { mutableStateOf("전체") }
     var showDialog by remember { mutableStateOf(false) }
 
     Column { //상단바
@@ -227,7 +263,7 @@ private fun RecommendTopBar(navController: NavHostController) {
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "강남역 4번 출구 근처",
+                        text = stationName,
                         fontSize = 14.sp,
                         color = Color(0xFF4B5563)
                     )
@@ -254,7 +290,11 @@ private fun RecommendTopBar(navController: NavHostController) {
             )
             AiRecommendDialog(
                 showDialog = showDialog,
-                onDismiss = { showDialog = false }
+                onDismiss = { showDialog = false },
+                onRecommend = { query ->
+                    onAiRecommend(query)
+                    showDialog = false
+                }
             )
         }
         Divider(thickness = 1.dp, color = Color(0xFFE5E7EB))
@@ -271,19 +311,25 @@ private fun RecommendTopBar(navController: NavHostController) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items(types) { (text, icon) ->
+            items(types) { item ->
                 PlaceTypeButton(
-                    icon = painterResource(icon),
-                    type = text,
-                    selected = selectedType == text,
+                    icon = painterResource(item.iconRes),
+                    type = item.title,
+                    selected = selectedTab == item.tab,
                     onClick = {
-                        selectedType = text
+                        onTabSelected(item.tab)
                     }
                 )
             }
         }
     }
 }
+
+private data class PlaceTypeUiModel(
+    val title: String,
+    val iconRes: Int,
+    val tab: PlaceRecommendationTab
+)
 
 @Composable
 private fun PlaceTypeButton(
@@ -314,7 +360,9 @@ private fun PlaceTypeButton(
             modifier = Modifier.size(14.dp, 15.dp),
             tint = if (selected) Color.White else Color(0xFF4B5563)
         )
+
         Spacer(modifier = Modifier.width(8.dp))
+
         Text(
             text = type,
             fontSize = 14.sp,
@@ -329,41 +377,12 @@ private fun PlaceTypeButton(
 @Composable
 private fun BottomSheetContent(
     modifier: Modifier = Modifier,
-    selectedPlaceIds: Set<Int>,
-    onTogglePlace: (Int) -> Unit
+    places: List<PlaceRecommendationItem>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    selectedPlaceIds: Set<String>,
+    onTogglePlace: (String) -> Unit
 ) {
-    val dummyPlaces = remember {
-        listOf(
-            RecommendedPlaceUiModel(
-                id = 1,
-                name = "모던 이탈리안 키친",
-                description = "정통 이탈리안 요리와 모던한 분위기",
-                rating = 4.8,
-                walkingMinutes = 3,
-                priceText = "2-3만원",
-                category = "식당"
-            ),
-            RecommendedPlaceUiModel(
-                id = 2,
-                name = "블루보틀 커피",
-                description = "스페셜티 커피와 편안한 공간",
-                rating = 4.6,
-                walkingMinutes = 2,
-                priceText = "5천-1만원",
-                category = "카페"
-            ),
-            RecommendedPlaceUiModel(
-                id = 3,
-                name = "루프탑 바 스카이",
-                description = "도시 전망과 함께하는 칵테일",
-                rating = 4.7,
-                walkingMinutes = 4,
-                priceText = "1-2만원",
-                category = "술집"
-            )
-        )
-    }
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -387,29 +406,78 @@ private fun BottomSheetContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(
-                items = dummyPlaces,
-                key = { it.id }
-            ) { place ->
-                RecommendPlaceCard(
-                    place = place,
-                    isSelected = place.id in selectedPlaceIds,
-                    onCardClick = {
-                        onTogglePlace(place.id)
-                    },
-                    onPinClick = {
-                        //TODO
-                    }
-                )
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "장소 추천을 불러오는 중입니다...",
+                        fontSize = 14.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                }
             }
 
-            if (selectedPlaceIds.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(50.dp))
+            errorMessage != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = errorMessage,
+                        fontSize = 14.sp,
+                        color = Color(0xFFEF4444)
+                    )
+                }
+            }
+
+            places.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "추천 장소가 없습니다.",
+                        fontSize = 14.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                }
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(
+                        items = places,
+                        key = { it.placeId }
+                    ) { place ->
+                        RecommendPlaceCard(
+                            place = place,
+                            isSelected = place.placeId in selectedPlaceIds,
+                            onCardClick = {
+                                onTogglePlace(place.placeId)
+                            },
+                            onPinClick = {
+                                //TODO
+                            }
+                        )
+                    }
+
+                    if (selectedPlaceIds.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(50.dp))
+                        }
+                    }
                 }
             }
         }
@@ -418,7 +486,7 @@ private fun BottomSheetContent(
 
 @Composable
 private fun RecommendPlaceCard(
-    place: RecommendedPlaceUiModel,
+    place: PlaceRecommendationItem,
     isSelected: Boolean,
     onCardClick: () -> Unit,
     onPinClick: () -> Unit
@@ -456,6 +524,20 @@ private fun RecommendPlaceCard(
                 .size(64.dp)
                 .background(Color(0xFFE5E7EB), RoundedCornerShape(8.dp))
         ) {
+            if (!place.imageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = place.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.matchParentSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color(0xFFE5E7EB))
+                )
+            }
+
             if (isSelected) {
                 Box(
                     modifier = Modifier
@@ -483,7 +565,7 @@ private fun RecommendPlaceCard(
 
         Column(verticalArrangement = Arrangement.SpaceBetween) {
             Text(
-                text = place.name,
+                text = place.placeName,
                 fontSize = 14.sp,
                 fontWeight = Bold,
                 color = pBlack,
@@ -491,7 +573,7 @@ private fun RecommendPlaceCard(
             )
 
             Text(
-                text = place.description,
+                text = place.aiSummary ?: "-",
                 fontSize = 12.sp,
                 color = Color(0xFF4B5563),
                 maxLines = 1
@@ -506,7 +588,7 @@ private fun RecommendPlaceCard(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "${place.rating}",
+                    text = "0",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = pBlack
@@ -521,7 +603,7 @@ private fun RecommendPlaceCard(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "도보 ${place.walkingMinutes}",
+                    text = "${String.format("%.1f", place.distanceFromMidpoint)}m",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF0284C7)
@@ -556,7 +638,7 @@ private fun RecommendPlaceCard(
             }
 
             Text(
-                text = place.priceText,
+                text = place.category,
                 fontSize = 12.sp,
                 color = Color(0xFF4B5563)
             )
@@ -568,7 +650,8 @@ private fun RecommendPlaceCard(
 @Composable
 private fun AiRecommendDialog(
     showDialog: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onRecommend: (String) -> Unit
 ) {
     if (!showDialog) return
 
@@ -764,7 +847,7 @@ private fun AiRecommendDialog(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            onDismiss()
+                            onRecommend(text.trim())
                         },
                     contentAlignment = Alignment.Center
                 ) {

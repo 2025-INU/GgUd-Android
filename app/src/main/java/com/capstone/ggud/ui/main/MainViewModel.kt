@@ -44,7 +44,7 @@ class MainViewModel(
 
             val upcomingResult = runCatching {
                 repo.getMyPromises(
-                    status = PromiseStatus.RECRUITING,
+                    status = PromiseStatus.PLACE_CONFIRMED,
                     page = 0,
                     size = 50
                 )
