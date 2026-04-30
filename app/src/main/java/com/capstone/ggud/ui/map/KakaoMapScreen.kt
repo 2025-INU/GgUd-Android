@@ -1,22 +1,32 @@
 package com.capstone.ggud.ui.map
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.util.Log
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.google.android.gms.location.LocationServices
 import com.kakao.vectormap.KakaoMap
 import com.kakao.vectormap.KakaoMapReadyCallback
 import com.kakao.vectormap.LatLng
 import com.kakao.vectormap.MapLifeCycleCallback
 import com.kakao.vectormap.MapView
+import com.kakao.vectormap.camera.CameraUpdateFactory
+import com.kakao.vectormap.label.LabelStyle
+import com.capstone.ggud.R
+import com.kakao.vectormap.label.LabelOptions
 
 @Composable
 fun KakaoMapScreen(
@@ -25,6 +35,121 @@ fun KakaoMapScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    val fusedLocationClient = remember { //구글 위치 서비스: 현재 위치 가져오기용
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    val defaultLocation = LatLng.from(37.375, 126.632)
+
+    var currentLocation by remember { //현재 위치상태
+        mutableStateOf<LatLng?>(null)
+    }
+
+    var kakaoMap by remember { //카카오맵 객체
+        mutableStateOf<KakaoMap?>(null)
+    }
+
+    var startRequested by remember { //map start() 중복 방지
+        mutableStateOf(false)
+    }
+
+    var ready by remember {
+        mutableStateOf(false)
+    }
+
+    //현재 위치 가져오는 함수
+    fun loadCurrentLocation() {
+        val hasPermission =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasPermission) {
+            Log.d("KakaoMapLocation", "위치 권한 없음")
+            return
+        }
+
+        //마지막 위치 가져오기
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    val latLng = LatLng.from(
+                        location.latitude,
+                        location.longitude
+                    )
+
+                    //상태 업데이트
+                    currentLocation = latLng
+
+                    //지도 중심 이동
+                    kakaoMap?.moveCamera(
+                        CameraUpdateFactory.newCenterPosition(latLng)
+                    )
+
+                    kakaoMap?.let { map ->
+                        addMyLocationMarker(
+                            map = map,
+                            position = latLng
+                        )
+                    }
+
+                    Log.d(
+                        "KakaoMapLocation",
+                        "현재 위치: ${location.latitude}, ${location.longitude}"
+                    )
+                } else {
+                    Log.d("KakaoMapLocation", "위치 null")
+                }
+            }
+    }
+
+    //위치 권한 요청
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+
+        val granted =
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                    permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        if (granted) {
+            loadCurrentLocation()
+        }
+    }
+
+    //최초 실행 시 권한 있으면 위치 가져오기 없으면 권한 요청
+    LaunchedEffect(Unit) {
+        val finePermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+
+        val coarsePermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        if (
+            finePermission == PackageManager.PERMISSION_GRANTED ||
+            coarsePermission == PackageManager.PERMISSION_GRANTED
+        ) {
+            loadCurrentLocation()
+        } else {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    //카카오 맵뷰 생성
     val mapView = remember {
         MapView(context).apply {
             layoutParams = ViewGroup.LayoutParams(
@@ -34,45 +159,43 @@ fun KakaoMapScreen(
         }
     }
 
-    // start() 호출 여부 (resume/pause 가드에 사용)
-    var startRequested by remember { mutableStateOf(false) }
-    // onMapReady 도착 여부(원하시면 UI 분기 등에 사용)
-    var ready by remember { mutableStateOf(false) }
-
+    //화면에 지도 붙이는 부분
     AndroidView(
         modifier = modifier.fillMaxSize(),
         factory = { mapView },
         update = {
-            // 혹시라도 compose update 타이밍에 내부 SurfaceView가 늦게 붙는 경우 대비
+            //SurfaceView 크기 깨지는 버그 보정
             mapView.post { ensureSurfaceMatchParent(mapView) }
         }
     )
 
-    /**
-     * ✅ MapView가 레이아웃된 뒤에 start()를 1번만 호출
-     * + start 직후 내부 SurfaceView가 0x0이면 MATCH_PARENT로 강제
-     */
+    //MapView가 화면에 그려진 이후 start() 호출
     DisposableEffect(mapView) {
         val listener = View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+
             if (!startRequested && v.width > 0 && v.height > 0) {
                 startRequested = true
-                Log.d("KakaoMapFix", "onLayout: size=${v.width}x${v.height} -> start()")
 
-                // start 직후 SurfaceView가 0x0으로 들어오는 케이스가 있어 강제 리사이징 반복
                 ensureSurfaceMatchParent(mapView)
 
                 startKakaoMap(
                     mapView = mapView,
-                    onReady = {
+                    initialPosition = currentLocation ?: defaultLocation,
+
+                    //지도 준비 완료 시
+                    onReady = { map ->
                         ready = true
+                        kakaoMap = map
+
+                        val position = currentLocation ?: defaultLocation
+
+                        map.moveCamera( //초기 위치로
+                            CameraUpdateFactory.newCenterPosition(position)
+                        )
+
+                        loadCurrentLocation() //이후 진짜 위치 다시
                     }
                 )
-
-                // start() 이후에도 SurfaceView가 늦게 붙는 경우가 많아서 몇 번 더 보정
-                mapView.postDelayed({ ensureSurfaceMatchParent(mapView) }, 50)
-                mapView.postDelayed({ ensureSurfaceMatchParent(mapView) }, 150)
-                mapView.postDelayed({ ensureSurfaceMatchParent(mapView) }, 300)
-                mapView.postDelayed({ ensureSurfaceMatchParent(mapView) }, 600)
             }
         }
 
@@ -83,34 +206,24 @@ fun KakaoMapScreen(
         }
     }
 
-    /**
-     * ✅ Lifecycle: start()가 호출된 이후에만 resume/pause/finish
-     * (ready가 아니라 startRequested로 가드하는 게 안전합니다)
-     */
+    //앱 생명주기 지도 맞춰주기
     DisposableEffect(lifecycleOwner, startRequested) {
         val observer = LifecycleEventObserver { _, event ->
+
             if (!startRequested) return@LifecycleEventObserver
 
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
-                    Log.d("KakaoMapFix", "ON_RESUME -> mapView.resume()")
-                    runCatching { mapView.resume() }
-                        .onFailure { Log.e("KakaoMapFix", "resume() failed: ${it.message}", it) }
-
-                    // resume 때도 SurfaceView 보정
-                    mapView.post { ensureSurfaceMatchParent(mapView) }
+                    mapView.resume()
+                    loadCurrentLocation() //다시 들어오면 위치 갱신
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {
-                    Log.d("KakaoMapFix", "ON_PAUSE -> mapView.pause()")
-                    runCatching { mapView.pause() }
-                        .onFailure { Log.e("KakaoMapFix", "pause() failed: ${it.message}", it) }
+                    mapView.pause()
                 }
 
                 Lifecycle.Event.ON_DESTROY -> {
-                    Log.d("KakaoMapFix", "ON_DESTROY -> mapView.finish()")
-                    runCatching { mapView.finish() }
-                        .onFailure { Log.e("KakaoMapFix", "finish() failed: ${it.message}", it) }
+                    mapView.finish()
                 }
 
                 else -> Unit
@@ -122,43 +235,32 @@ fun KakaoMapScreen(
     }
 }
 
+//지도 시작
 private fun startKakaoMap(
     mapView: MapView,
-    onReady: () -> Unit
+    initialPosition: LatLng,
+    onReady: (KakaoMap) -> Unit
 ) {
-    runCatching {
-        mapView.start(
-            object : MapLifeCycleCallback() {
-                override fun onMapDestroy() {
-                    Log.d("KakaoMapFix", "onMapDestroy")
-                }
-
-                override fun onMapError(error: Exception) {
-                    Log.e("KakaoMapFix", "onMapError: ${error.message}", error)
-                }
-            },
-            object : KakaoMapReadyCallback() {
-                override fun onMapReady(map: KakaoMap) {
-                    Log.d("KakaoMapFix", "✅ onMapReady: map loaded")
-                    onReady()
-
-                    // ready 이후 한 번 더 보정
-                    mapView.post { ensureSurfaceMatchParent(mapView) }
-                }
-
-                override fun getPosition(): LatLng = LatLng.from(37.375, 126.632)
-                override fun getZoomLevel(): Int = 15
+    mapView.start(
+        object : MapLifeCycleCallback() {
+            override fun onMapDestroy() {}
+            override fun onMapError(error: Exception) {}
+        },
+        object : KakaoMapReadyCallback() {
+            override fun onMapReady(map: KakaoMap) { //지도 준비 완료
+                onReady(map)
             }
-        )
-    }.onFailure {
-        Log.e("KakaoMapFix", "start() failed: ${it.message}", it)
-    }
+
+            override fun getPosition(): LatLng { //최초 지도 중심 위치
+                return initialPosition
+            }
+
+            override fun getZoomLevel(): Int = 15
+        }
+    )
 }
 
-/**
- * ✅ MapView 내부에 붙는 KGLSurfaceView(SurfaceView)가 0x0으로 들어오는 경우가 있어
- * 발견 즉시 MATCH_PARENT로 강제하고 requestLayout/invalidate를 걸어줍니다.
- */
+//맵뷰 내부 버그 대응
 private fun ensureSurfaceMatchParent(root: View, tryCount: Int = 0) {
     val surfaceViews = mutableListOf<SurfaceView>()
 
@@ -203,4 +305,22 @@ private fun ensureSurfaceMatchParent(root: View, tryCount: Int = 0) {
             "SurfaceView found: size=${sv.width}x${sv.height}, lp=${sv.layoutParams?.width}x${sv.layoutParams?.height}"
         )
     }
+}
+
+//내 위치에 마커 찍기
+private fun addMyLocationMarker(
+    map: KakaoMap,
+    position: LatLng
+) {
+    val labelManager = map.labelManager ?: return
+    val layer = labelManager.layer ?: return
+
+    layer.removeAll()
+
+    val style = LabelStyle.from(R.drawable.ic_map_marker)
+
+    val options = LabelOptions.from(position)
+        .setStyles(style)
+
+    layer.addLabel(options)
 }

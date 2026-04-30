@@ -1,15 +1,20 @@
 package com.capstone.ggud.network
 
+import com.capstone.ggud.network.dto.ConfirmMidpointRequest
 import com.capstone.ggud.network.dto.CreatePromiseRequest
 import com.capstone.ggud.network.dto.InviteCodeResponse
 import com.capstone.ggud.network.dto.InviteLinkResponse
 import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
+import com.capstone.ggud.network.dto.PlaceConfirmRequest
+import com.capstone.ggud.network.dto.PlaceRecommendationRequest
+import com.capstone.ggud.network.dto.PlaceRecommendationResponse
 import com.capstone.ggud.network.dto.PromiseResponse
 import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.network.dto.PromiseSummaryResponse
 import com.capstone.ggud.network.dto.UpdateDepartureRequest
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -69,4 +74,22 @@ interface PromiseApi {
     suspend fun getPromiseByInviteCode(
         @Path("inviteCode") inviteCode: String
     ): PromiseResponse
+
+    @POST("/api/v1/promises/{promiseId}/place-recommendations")
+    suspend fun getPlaceRecommendations(
+        @Path("promiseId") promiseId: Long,
+        @Body body: PlaceRecommendationRequest
+    ): PlaceRecommendationResponse
+
+    @POST("/api/v1/promises/{promiseId}/midpoint/confirm")
+    suspend fun confirmMidpoint(
+        @Path("promiseId") promiseId: Long,
+        @Body request: ConfirmMidpointRequest
+    ): Response<Unit>
+
+    @POST("/api/v1/promises/{promiseId}/midpoint/place-confirm")
+    suspend fun confirmPlace(
+        @Path("promiseId") promiseId: Long,
+        @Body body: PlaceConfirmRequest
+    )
 }

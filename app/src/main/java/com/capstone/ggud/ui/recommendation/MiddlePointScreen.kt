@@ -1,5 +1,6 @@
 package com.capstone.ggud.ui.recommendation
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,6 +58,7 @@ import com.capstone.ggud.ui.theme.pBlack
 import kotlinx.coroutines.delay
 
 data class MiddlePointCardUi(
+    val stationId: Long,
     val title: String,
     val address: String,
     val avgMinutes: Int
@@ -101,7 +103,18 @@ fun MiddlePointScreen(
                     .fillMaxWidth()
                     .navigationBarsPadding(),
                 items = uiState.items,
-                onClickItem = { navController.navigate("recommend_place") }
+                onClickItem = { item ->
+                    vm.confirmMidpoint(
+                        stationId = item.stationId,
+                        onSuccess = {
+                            navController.navigate(
+                                "recommend_place/$promiseId/${Uri.encode(item.title)}"
+                            )
+                        },
+                        onError = {
+                        }
+                    )
+                }
             )
         }
     ) { innerPadding ->
