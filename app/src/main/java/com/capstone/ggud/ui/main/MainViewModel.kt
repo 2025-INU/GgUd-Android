@@ -9,6 +9,7 @@ import com.capstone.ggud.network.dto.PromiseStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
@@ -66,17 +67,18 @@ class MainViewModel(
     }
 
     companion object {
-        private val dateFmt = DateTimeFormatter.ofPattern("yyyy-M-d")
-        private val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
-
-        fun formatDate(iso: String?): String {
-            if (iso.isNullOrBlank()) return "-"
-            return runCatching { OffsetDateTime.parse(iso).format(dateFmt) }.getOrDefault("-")
+        fun formatDate(iso: String): String {
+            return runCatching {
+                LocalDateTime.parse(iso)
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            }.getOrElse { "-" }
         }
 
-        fun formatTime(iso: String?): String {
-            if (iso.isNullOrBlank()) return "-"
-            return runCatching { OffsetDateTime.parse(iso).format(timeFmt) }.getOrDefault("-")
+        fun formatTime(iso: String): String {
+            return runCatching {
+                LocalDateTime.parse(iso)
+                    .format(DateTimeFormatter.ofPattern("HH:mm"))
+            }.getOrElse { "-" }
         }
     }
 }
