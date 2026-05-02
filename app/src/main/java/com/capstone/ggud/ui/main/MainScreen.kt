@@ -148,7 +148,8 @@ fun MainScreen(navController: NavHostController) {
                         date = MainViewModel.formatDate(p.promiseDateTime),
                         time = MainViewModel.formatTime(p.promiseDateTime),
                         people = p.participantCount,
-                        spot = p.confirmedPlaceName ?: "장소 미정"
+                        spot = p.confirmedPlaceName ?: "장소 미정",
+                        onClick = { navController.navigate("ongoing") }
                     )
                 }
             } else {
@@ -224,9 +225,14 @@ fun MainScreen(navController: NavHostController) {
                         ) {
                             BasicTextField( //실제로는 텍스트필드 하나지만 6칸처럼 보이도록
                                 value = joinCode, //입력값
-                                onValueChange = { //사용자가 입력할 때마다 호출
-                                    if (it.length <= 6) {
-                                        joinCode = it
+                                onValueChange = { input ->
+                                    val newValue = input
+                                        .uppercase() //대문자 변환
+                                        .filter { it.isDigit() || it in 'A'..'Z' } //대문자+숫자만
+                                        .take(6) //6자리 제한
+
+                                    if (joinCode != newValue) {
+                                        joinCode = newValue
                                     }
                                 },
                                 singleLine = true,
@@ -384,7 +390,8 @@ fun InProgressCard(
     date: String,
     time: String,
     people: Int,
-    spot: String
+    spot: String,
+    onClick: () -> Unit
 ){
     Column(
         modifier = Modifier
@@ -396,6 +403,10 @@ fun InProgressCard(
                 color = Color(0xFFE5E7EB),
                 shape = RoundedCornerShape(16.dp)
             )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
             .padding(25.dp)
     ) {
         Row {
