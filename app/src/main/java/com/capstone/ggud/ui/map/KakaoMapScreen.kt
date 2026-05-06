@@ -2,7 +2,6 @@ package com.capstone.ggud.ui.map
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.util.Log
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
@@ -28,11 +27,22 @@ import com.kakao.vectormap.label.LabelStyle
 import com.capstone.ggud.R
 import com.kakao.vectormap.label.LabelOptions
 
+data class KakaoMapMarker(
+    val id: String,
+    val latitude: Double,
+    val longitude: Double
+)
+
 @Composable
 fun KakaoMapScreen(
     modifier: Modifier = Modifier,
+    mapKey: String = "default",
     markerLatitude: Double? = null,
-    markerLongitude: Double? = null
+    markerLongitude: Double? = null,
+    markers: List<KakaoMapMarker> = emptyList(),
+    focusedMarkerId: String? = null,
+    markerResId: Int = R.drawable.ic_map_marker,
+    moveToCurrentLocation: Boolean = false
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -47,65 +57,48 @@ fun KakaoMapScreen(
         mutableStateOf<LatLng?>(null)
     }
 
-    var kakaoMap by remember { //카카오맵 객체
+    var kakaoMap by remember(mapKey) { //카카오맵 객체
         mutableStateOf<KakaoMap?>(null)
     }
 
-    var startRequested by remember { //map start() 중복 방지
-        mutableStateOf(false)
-    }
-
-    var ready by remember {
+    var startRequested by remember(mapKey) { //map start() 중복 방지
         mutableStateOf(false)
     }
 
     //현재 위치 가져오는 함수
+    fun hasLocationPermission(): Boolean {
+        val finePermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+
+        val coarsePermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        return finePermission == PackageManager.PERMISSION_GRANTED ||
+                coarsePermission == PackageManager.PERMISSION_GRANTED
+    }
+
     fun loadCurrentLocation() {
-        val hasPermission =
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
+        if (!hasLocationPermission()) return
 
-        if (!hasPermission) {
-            Log.d("KakaoMapLocation", "위치 권한 없음")
-            return
-        }
-
-        //마지막 위치 가져오기
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location ->
-                if (location != null) {
-                    val latLng = LatLng.from(
-                        location.latitude,
-                        location.longitude
-                    )
+                if (location == null) return@addOnSuccessListener
 
-                    //상태 업데이트
-                    currentLocation = latLng
+                val latLng = LatLng.from(
+                    location.latitude,
+                    location.longitude
+                )
 
-                    //지도 중심 이동
+                currentLocation = latLng
+
+                if (moveToCurrentLocation) {
                     kakaoMap?.moveCamera(
                         CameraUpdateFactory.newCenterPosition(latLng)
                     )
-
-//                    kakaoMap?.let { map ->
-//                        addMyLocationMarker(
-//                            map = map,
-//                            position = latLng
-//                        )
-//                    }
-
-                    Log.d(
-                        "KakaoMapLocation",
-                        "현재 위치: ${location.latitude}, ${location.longitude}"
-                    )
-                } else {
-                    Log.d("KakaoMapLocation", "위치 null")
                 }
             }
     }
@@ -125,21 +118,10 @@ fun KakaoMapScreen(
     }
 
     //최초 실행 시 권한 있으면 위치 가져오기 없으면 권한 요청
-    LaunchedEffect(Unit) {
-        val finePermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
+    LaunchedEffect(moveToCurrentLocation) {
+        if (!moveToCurrentLocation) return@LaunchedEffect
 
-        val coarsePermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-
-        if (
-            finePermission == PackageManager.PERMISSION_GRANTED ||
-            coarsePermission == PackageManager.PERMISSION_GRANTED
-        ) {
+        if (hasLocationPermission()) {
             loadCurrentLocation()
         } else {
             permissionLauncher.launch(
@@ -151,32 +133,56 @@ fun KakaoMapScreen(
         }
     }
 
-    LaunchedEffect(kakaoMap, markerLatitude, markerLongitude) {
+    LaunchedEffect(kakaoMap, markerLatitude, markerLongitude, markers, focusedMarkerId, markerResId) {
         val map = kakaoMap ?: return@LaunchedEffect
-        val lat = markerLatitude ?: return@LaunchedEffect
-        val lng = markerLongitude ?: return@LaunchedEffect
 
-        val position = LatLng.from(lat, lng)
+        val targetPosition = when {
+            markers.isNotEmpty() -> {
+                val targetMarker = markers.firstOrNull { it.id == focusedMarkerId }
+                    ?: markers.first()
+
+                LatLng.from(
+                    targetMarker.latitude,
+                    targetMarker.longitude
+                )
+            }
+
+            markerLatitude != null && markerLongitude != null -> {
+                LatLng.from(markerLatitude, markerLongitude)
+            }
+
+            else -> return@LaunchedEffect
+        }
 
         map.moveCamera(
-            CameraUpdateFactory.newCenterPosition(position)
+            CameraUpdateFactory.newCenterPosition(targetPosition)
         )
 
         val labelManager = map.labelManager ?: return@LaunchedEffect
         val layer = labelManager.layer ?: return@LaunchedEffect
+        val style = LabelStyle.from(markerResId)
 
         layer.removeAll()
 
-        val style = LabelStyle.from(R.drawable.ic_map_marker)
+        if (markers.isNotEmpty()) {
+            markers.forEach { marker ->
+                val position = LatLng.from(marker.latitude, marker.longitude)
 
-        val options = LabelOptions.from(position)
-            .setStyles(style)
+                val options = LabelOptions.from(position)
+                    .setStyles(style)
 
-        layer.addLabel(options)
+                layer.addLabel(options)
+            }
+        } else {
+            val options = LabelOptions.from(targetPosition)
+                .setStyles(style)
+
+            layer.addLabel(options)
+        }
     }
 
     //카카오 맵뷰 생성
-    val mapView = remember {
+    val mapView = remember(mapKey) {
         MapView(context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -210,16 +216,17 @@ fun KakaoMapScreen(
 
                     //지도 준비 완료 시
                     onReady = { map ->
-                        ready = true
                         kakaoMap = map
 
-                        val position = currentLocation ?: defaultLocation
+                        if (moveToCurrentLocation) {
+                            val position = currentLocation ?: defaultLocation
 
-                        map.moveCamera( //초기 위치로
-                            CameraUpdateFactory.newCenterPosition(position)
-                        )
+                            map.moveCamera(
+                                CameraUpdateFactory.newCenterPosition(position)
+                            )
 
-                        loadCurrentLocation() //이후 진짜 위치 다시
+                            loadCurrentLocation()
+                        }
                     }
                 )
             }
@@ -241,7 +248,10 @@ fun KakaoMapScreen(
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
                     mapView.resume()
-                    loadCurrentLocation() //다시 들어오면 위치 갱신
+
+                    if (moveToCurrentLocation) {
+                        loadCurrentLocation()
+                    }
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {
@@ -318,35 +328,12 @@ private fun ensureSurfaceMatchParent(root: View, tryCount: Int = 0) {
             )
         }
 
-        // 0x0으로 찍히는 상황이면 강제 레이아웃 트리거
+        //0x0으로 찍히는 상황이면 강제 레이아웃 트리거
         if (sv.width == 0 || sv.height == 0) {
             sv.requestLayout()
             (sv.parent as? View)?.requestLayout()
         }
 
         sv.invalidate()
-
-        Log.d(
-            "KakaoMapFix",
-            "SurfaceView found: size=${sv.width}x${sv.height}, lp=${sv.layoutParams?.width}x${sv.layoutParams?.height}"
-        )
     }
 }
-
-//내 위치에 마커 찍기
-//private fun addMyLocationMarker(
-//    map: KakaoMap,
-//    position: LatLng
-//) {
-//    val labelManager = map.labelManager ?: return
-//    val layer = labelManager.layer ?: return
-//
-//    layer.removeAll()
-//
-//    val style = LabelStyle.from(R.drawable.ic_map_marker)
-//
-//    val options = LabelOptions.from(position)
-//        .setStyles(style)
-//
-//    layer.addLabel(options)
-//}

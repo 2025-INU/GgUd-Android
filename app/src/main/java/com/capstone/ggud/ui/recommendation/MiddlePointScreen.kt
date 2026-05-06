@@ -96,7 +96,7 @@ fun MiddlePointScreen(
         showGuideBanner = false
     }
 
-    val peekHeight = 300.dp
+    val peekHeight = 400.dp
 
     val scaffoldState = rememberBottomSheetScaffoldState()
 
@@ -139,6 +139,7 @@ fun MiddlePointScreen(
         ) {
             KakaoMapScreen(
                 modifier = Modifier.matchParentSize(),
+                mapKey = "middle_point_$promiseId",
                 markerLatitude = selectedItem?.latitude,
                 markerLongitude = selectedItem?.longitude
             )
@@ -250,7 +251,10 @@ private fun BottomSheetContent(
                     item = item,
                     isSelected = selectedItem?.stationId == item.stationId,
                     onCardClick = { onSelectItem(item) },
-                    onRecommendClick = { onClickRecommend(item) }
+                    onRecommendClick = {
+                        onSelectItem(item)
+                        onClickRecommend(item)
+                    }
                 )
             }
 

@@ -33,7 +33,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Divider
@@ -71,6 +70,7 @@ import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.network.dto.PlaceRecommendationItem
 import com.capstone.ggud.network.dto.PlaceRecommendationTab
+import com.capstone.ggud.ui.map.KakaoMapMarker
 import com.capstone.ggud.ui.map.KakaoMapScreen
 import com.capstone.ggud.ui.theme.pBlack
 
@@ -87,6 +87,7 @@ fun RecommendPlaceScreen(
     }
 
     val vm: RecommendPlaceViewModel = viewModel(
+        key = "recommend_place_${promiseId}_$stationName",
         factory = RecommendPlaceViewModel.Factory(
             promiseId = promiseId,
             repository = promiseRepository
@@ -95,7 +96,19 @@ fun RecommendPlaceScreen(
 
     val uiState by vm.uiState.collectAsState()
 
-    val peekHeight = 250.dp
+    var focusedPlaceId by remember(stationName) { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(uiState.places) {
+        if (uiState.places.isNotEmpty()) {
+            val exists = uiState.places.any { it.placeId == focusedPlaceId }
+
+            if (focusedPlaceId == null || !exists) {
+                focusedPlaceId = uiState.places.first().placeId
+            }
+        }
+    }
+
+    val peekHeight = 400.dp
     val scaffoldState = rememberBottomSheetScaffoldState()
     val selectedCount = uiState.selectedPlaceIds.size
 
@@ -127,7 +140,10 @@ fun RecommendPlaceScreen(
                     isLoading = uiState.isLoading,
                     errorMessage = uiState.errorMessage,
                     selectedPlaceIds = uiState.selectedPlaceIds,
-                    onTogglePlace = vm::togglePlace
+                    onTogglePlace = vm::togglePlace,
+                    onFocusPlace = { place ->
+                        focusedPlaceId = place.placeId
+                    }
                 )
             }
         ) { innerPadding ->
@@ -136,16 +152,27 @@ fun RecommendPlaceScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                KakaoMapScreen(modifier = Modifier.matchParentSize())
+
+                KakaoMapScreen(
+                    modifier = Modifier.matchParentSize(),
+                    mapKey = "recommend_place_${promiseId}_$stationName",
+                    markers = uiState.places.map { place ->
+                        KakaoMapMarker(
+                            id = place.placeId,
+                            latitude = place.latitude,
+                            longitude = place.longitude
+                        )
+                    },
+                    focusedMarkerId = focusedPlaceId,
+                    markerResId = R.drawable.ic_map_marker_small
+                )
 
                 RecommendTopBar(
                     navController = navController,
                     stationName = stationName,
                     selectedTab = uiState.selectedTab,
-                    aiQuery = uiState.aiQuery,
                     onTabSelected = vm::selectTab,
-                    onAiRecommend = vm::requestAiRecommendation,
-                    onClearAiQuery = vm::clearAiQuery
+                    onAiRecommend = vm::requestAiRecommendation
                 )
             }
         }
@@ -213,10 +240,8 @@ private fun RecommendTopBar(
     navController: NavHostController,
     stationName: String,
     selectedTab: PlaceRecommendationTab,
-    aiQuery: String,
     onTabSelected: (PlaceRecommendationTab) -> Unit,
     onAiRecommend: (String) -> Unit,
-    onClearAiQuery: () -> Unit
 ) {
     val types = listOf(
         PlaceTypeUiModel("전체", R.drawable.ic_all, PlaceRecommendationTab.ALL),
@@ -263,7 +288,7 @@ private fun RecommendTopBar(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = stationName,
+                        text = "${stationName}역",
                         fontSize = 14.sp,
                         color = Color(0xFF4B5563)
                     )
@@ -381,11 +406,13 @@ private fun BottomSheetContent(
     isLoading: Boolean,
     errorMessage: String?,
     selectedPlaceIds: Set<String>,
-    onTogglePlace: (String) -> Unit
+    onTogglePlace: (String) -> Unit,
+    onFocusPlace: (PlaceRecommendationItem) -> Unit
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .height(400.dp)
             .padding(24.dp)
     ) {
         Box(
@@ -454,7 +481,9 @@ private fun BottomSheetContent(
 
             else -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(
@@ -467,9 +496,7 @@ private fun BottomSheetContent(
                             onCardClick = {
                                 onTogglePlace(place.placeId)
                             },
-                            onPinClick = {
-                                //TODO
-                            }
+                            onPinClick = { onFocusPlace(place) }
                         )
                     }
 
@@ -511,12 +538,12 @@ private fun RecommendPlaceCard(
             .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
             .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-            .padding(13.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onCardClick
-            ),
+            )
+            .padding(13.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -579,22 +606,7 @@ private fun RecommendPlaceCard(
                 maxLines = 1
             )
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = Color(0xFFFACC15),
-                    modifier = Modifier.size(13.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "0",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = pBlack
-                )
-                Spacer(modifier = Modifier.width(11.3.dp))
-
+            Row {
                 Icon(
                     imageVector = Icons.Filled.DirectionsWalk,
                     contentDescription = null,
@@ -603,7 +615,7 @@ private fun RecommendPlaceCard(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "${String.format("%.1f", place.distanceFromMidpoint)}m",
+                    text = "${String.format("%.1f", place.distanceFromMidpoint)}km",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF0284C7)
@@ -657,7 +669,7 @@ private fun AiRecommendDialog(
 
     var text by remember { mutableStateOf("") }
 
-    val exampleKeywoeds = listOf(
+    val exampleKeywords = listOf(
         "로맨틱한 분위기",
         "조용한 카페",
         "활기찬 펍",
@@ -776,7 +788,7 @@ private fun AiRecommendDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    exampleKeywoeds.forEach { keyword ->
+                    exampleKeywords.forEach { keyword ->
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(999.dp))
