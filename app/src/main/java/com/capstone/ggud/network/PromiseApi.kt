@@ -3,7 +3,6 @@ package com.capstone.ggud.network
 import com.capstone.ggud.network.dto.ConfirmMidpointRequest
 import com.capstone.ggud.network.dto.CreatePromiseRequest
 import com.capstone.ggud.network.dto.InviteCodeResponse
-import com.capstone.ggud.network.dto.InviteLinkResponse
 import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
@@ -33,11 +32,6 @@ interface PromiseApi {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): PagePromiseResponse
-
-    @GET("/api/v1/promises/{promiseId}/invite/link")
-    suspend fun getInviteLink(
-        @Path("promiseId") promiseId: Long
-    ): InviteLinkResponse
 
     @GET("/api/v1/promises/{promiseId}/participants")
     suspend fun getPromiseParticipants(
@@ -92,4 +86,9 @@ interface PromiseApi {
         @Path("promiseId") promiseId: Long,
         @Body body: PlaceConfirmRequest
     )
+
+    @POST("/api/v1/promises/join/{inviteCode}")
+    suspend fun joinPromiseByInviteCode(
+        @Path("inviteCode") inviteCode: String
+    ): PromiseResponse
 }

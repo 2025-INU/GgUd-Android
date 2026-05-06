@@ -7,6 +7,8 @@ fun StationRecommendation.toMiddlePointCardUi(): MiddlePointCardUi {
         stationId = stationId,
         title = stationName,
         address = lineName,
-        avgMinutes = averageTravelTimeMinutes
+        avgMinutes = averageTravelTimeMinutes,
+        latitude = latitude,
+        longitude = longitude
     )
 }

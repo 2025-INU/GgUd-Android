@@ -30,7 +30,9 @@ import com.kakao.vectormap.label.LabelOptions
 
 @Composable
 fun KakaoMapScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    markerLatitude: Double? = null,
+    markerLongitude: Double? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -91,12 +93,12 @@ fun KakaoMapScreen(
                         CameraUpdateFactory.newCenterPosition(latLng)
                     )
 
-                    kakaoMap?.let { map ->
-                        addMyLocationMarker(
-                            map = map,
-                            position = latLng
-                        )
-                    }
+//                    kakaoMap?.let { map ->
+//                        addMyLocationMarker(
+//                            map = map,
+//                            position = latLng
+//                        )
+//                    }
 
                     Log.d(
                         "KakaoMapLocation",
@@ -147,6 +149,30 @@ fun KakaoMapScreen(
                 )
             )
         }
+    }
+
+    LaunchedEffect(kakaoMap, markerLatitude, markerLongitude) {
+        val map = kakaoMap ?: return@LaunchedEffect
+        val lat = markerLatitude ?: return@LaunchedEffect
+        val lng = markerLongitude ?: return@LaunchedEffect
+
+        val position = LatLng.from(lat, lng)
+
+        map.moveCamera(
+            CameraUpdateFactory.newCenterPosition(position)
+        )
+
+        val labelManager = map.labelManager ?: return@LaunchedEffect
+        val layer = labelManager.layer ?: return@LaunchedEffect
+
+        layer.removeAll()
+
+        val style = LabelStyle.from(R.drawable.ic_map_marker)
+
+        val options = LabelOptions.from(position)
+            .setStyles(style)
+
+        layer.addLabel(options)
     }
 
     //카카오 맵뷰 생성
@@ -308,19 +334,19 @@ private fun ensureSurfaceMatchParent(root: View, tryCount: Int = 0) {
 }
 
 //내 위치에 마커 찍기
-private fun addMyLocationMarker(
-    map: KakaoMap,
-    position: LatLng
-) {
-    val labelManager = map.labelManager ?: return
-    val layer = labelManager.layer ?: return
-
-    layer.removeAll()
-
-    val style = LabelStyle.from(R.drawable.ic_map_marker)
-
-    val options = LabelOptions.from(position)
-        .setStyles(style)
-
-    layer.addLabel(options)
-}
+//private fun addMyLocationMarker(
+//    map: KakaoMap,
+//    position: LatLng
+//) {
+//    val labelManager = map.labelManager ?: return
+//    val layer = labelManager.layer ?: return
+//
+//    layer.removeAll()
+//
+//    val style = LabelStyle.from(R.drawable.ic_map_marker)
+//
+//    val options = LabelOptions.from(position)
+//        .setStyles(style)
+//
+//    layer.addLabel(options)
+//}

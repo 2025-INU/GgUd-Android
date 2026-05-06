@@ -75,13 +75,6 @@ data class PageableObject(
     val unpaged: Boolean
 )
 
-data class InviteLinkResponse(
-    val inviteCode: String,
-    val inviteUrl: String,
-    val expiredAt: String,
-    val isValid: Boolean
-)
-
 data class ParticipantResponse(
     val id: Long,
     val userId: Long,

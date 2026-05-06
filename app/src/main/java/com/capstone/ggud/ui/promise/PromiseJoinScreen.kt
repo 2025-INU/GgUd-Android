@@ -202,17 +202,28 @@ fun PromiseJoinScreen(
         }
 
         searchJob = coroutineScope.launch {
-            delay(300) // 타이핑 debounce
+            delay(300)
 
-            val result = kakaoRepository.searchPlaces(query)
-            searchResults = result.map {
-                PlaceSearchItem(
-                    name = it.place_name.orEmpty(),
-                    address = it.address_name.orEmpty(),
-                    roadAddress = it.road_address_name.orEmpty(),
-                    longitude = it.x.orEmpty(),
-                    latitude = it.y.orEmpty()
-                )
+            runCatching {
+                kakaoRepository.searchPlaces(query)
+            }.onSuccess { result ->
+                searchResults = result.map {
+                    PlaceSearchItem(
+                        name = it.place_name.orEmpty(),
+                        address = it.address_name.orEmpty(),
+                        roadAddress = it.road_address_name.orEmpty(),
+                        longitude = it.x.orEmpty(),
+                        latitude = it.y.orEmpty()
+                    )
+                }
+            }.onFailure { e ->
+                e.printStackTrace()
+                Toast.makeText(
+                    context,
+                    "주소 검색에 실패했습니다.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                searchResults = emptyList()
             }
         }
     }

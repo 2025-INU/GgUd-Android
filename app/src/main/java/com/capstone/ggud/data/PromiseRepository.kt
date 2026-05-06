@@ -130,4 +130,8 @@ class PromiseRepository(
             )
         )
     }
+
+    suspend fun joinPromiseByInviteCode(inviteCode: String): PromiseResponse {
+        return api.joinPromiseByInviteCode(inviteCode.trim())
+    }
 }

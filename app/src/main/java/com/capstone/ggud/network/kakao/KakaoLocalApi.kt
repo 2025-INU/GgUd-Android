@@ -1,7 +1,6 @@
 package com.capstone.ggud.network.kakao
 
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.Query
 
 interface KakaoLocalApi {
