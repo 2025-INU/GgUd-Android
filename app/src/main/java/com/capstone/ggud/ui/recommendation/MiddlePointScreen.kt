@@ -61,7 +61,9 @@ data class MiddlePointCardUi(
     val stationId: Long,
     val title: String,
     val address: String,
-    val avgMinutes: Int
+    val avgMinutes: Int,
+    val latitude: Double,
+    val longitude: Double
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,6 +80,14 @@ fun MiddlePointScreen(
         factory = MiddlePointViewModelFactory(repo, promiseId)
     )
     val uiState by vm.uiState.collectAsStateWithLifecycle()
+
+    var selectedItem by remember { mutableStateOf<MiddlePointCardUi?>(null) }
+
+    LaunchedEffect(uiState.items) {
+        if (selectedItem == null && uiState.items.isNotEmpty()) {
+            selectedItem = uiState.items.first()
+        }
+    }
 
     var showGuideBanner by remember { mutableStateOf(true) }
 
@@ -103,7 +113,11 @@ fun MiddlePointScreen(
                     .fillMaxWidth()
                     .navigationBarsPadding(),
                 items = uiState.items,
-                onClickItem = { item ->
+                selectedItem = selectedItem,
+                onSelectItem = { item ->
+                    selectedItem = item
+                },
+                onClickRecommend = { item ->
                     vm.confirmMidpoint(
                         stationId = item.stationId,
                         onSuccess = {
@@ -123,7 +137,11 @@ fun MiddlePointScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            KakaoMapScreen(modifier = Modifier.matchParentSize())
+            KakaoMapScreen(
+                modifier = Modifier.matchParentSize(),
+                markerLatitude = selectedItem?.latitude,
+                markerLongitude = selectedItem?.longitude
+            )
 
             TopOverlayBar(
                 modifier = Modifier
@@ -193,11 +211,14 @@ private fun GuideBanner(
 private fun BottomSheetContent(
     modifier: Modifier = Modifier,
     items: List<MiddlePointCardUi>,
-    onClickItem: (MiddlePointCardUi) -> Unit
+    selectedItem: MiddlePointCardUi?,
+    onSelectItem: (MiddlePointCardUi) -> Unit,
+    onClickRecommend: (MiddlePointCardUi) -> Unit
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .height(400.dp)
             .padding(24.dp)
     ) {
         Box(
@@ -219,13 +240,17 @@ private fun BottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(items) { item ->
                 MiddlePointCard(
                     item = item,
-                    onClick = { onClickItem(item) }
+                    isSelected = selectedItem?.stationId == item.stationId,
+                    onCardClick = { onSelectItem(item) },
+                    onRecommendClick = { onClickRecommend(item) }
                 )
             }
 
@@ -237,9 +262,10 @@ private fun BottomSheetContent(
 @Composable
 private fun MiddlePointCard(
     item: MiddlePointCardUi,
-    onClick: () -> Unit
+    isSelected: Boolean,
+    onCardClick: () -> Unit,
+    onRecommendClick: () -> Unit
 ) {
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -248,7 +274,7 @@ private fun MiddlePointCard(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) { onClick() },
+            ) { onCardClick() },
         shape = RoundedCornerShape(12.dp),
         color = Color(0xFFF9FAFB)
     ) {
@@ -291,7 +317,12 @@ private fun MiddlePointCard(
             Image(
                 painter = painterResource(R.drawable.btn_recommend),
                 contentDescription = "추천장소로 이동",
-                modifier = Modifier.size(43.dp)
+                modifier = Modifier
+                    .size(43.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onRecommendClick() }
             )
         }
     }

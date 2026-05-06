@@ -3,7 +3,6 @@ package com.capstone.ggud.network
 import com.capstone.ggud.network.dto.ConfirmMidpointRequest
 import com.capstone.ggud.network.dto.CreatePromiseRequest
 import com.capstone.ggud.network.dto.InviteCodeResponse
-import com.capstone.ggud.network.dto.InviteLinkResponse
 import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
