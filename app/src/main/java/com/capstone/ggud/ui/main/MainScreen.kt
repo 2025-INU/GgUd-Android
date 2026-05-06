@@ -296,10 +296,12 @@ fun MainScreen(navController: NavHostController) {
                                     repository.getPromiseByInviteCode(code)
                                 }.onSuccess { promise ->
                                     if (promise.status == PromiseStatus.RECRUITING) {
+                                        val joinedPromise = repository.joinPromiseByInviteCode(code)
+
                                         showJoinDialog = false
                                         joinCode = ""
 
-                                        navController.navigate("waiting/${promise.id}")
+                                        navController.navigate("waiting/${joinedPromise.id}")
                                     } else {
                                         Toast.makeText(
                                             context,

@@ -34,11 +34,6 @@ interface PromiseApi {
         @Query("size") size: Int = 20
     ): PagePromiseResponse
 
-    @GET("/api/v1/promises/{promiseId}/invite/link")
-    suspend fun getInviteLink(
-        @Path("promiseId") promiseId: Long
-    ): InviteLinkResponse
-
     @GET("/api/v1/promises/{promiseId}/participants")
     suspend fun getPromiseParticipants(
         @Path("promiseId") promiseId: Long
@@ -92,4 +87,9 @@ interface PromiseApi {
         @Path("promiseId") promiseId: Long,
         @Body body: PlaceConfirmRequest
     )
+
+    @POST("/api/v1/promises/join/{inviteCode}")
+    suspend fun joinPromiseByInviteCode(
+        @Path("inviteCode") inviteCode: String
+    ): PromiseResponse
 }
