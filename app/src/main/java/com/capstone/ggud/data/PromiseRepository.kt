@@ -3,6 +3,7 @@ package com.capstone.ggud.data
 import com.capstone.ggud.network.PromiseApi
 import com.capstone.ggud.network.dto.ConfirmMidpointRequest
 import com.capstone.ggud.network.dto.CreatePromiseRequest
+import com.capstone.ggud.network.dto.DirectionResponse
 import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
@@ -133,5 +134,25 @@ class PromiseRepository(
 
     suspend fun joinPromiseByInviteCode(inviteCode: String): PromiseResponse {
         return api.joinPromiseByInviteCode(inviteCode.trim())
+    }
+
+    suspend fun resetMidpoint(promiseId: Long) {
+        api.resetMidpoint(promiseId)
+    }
+
+    suspend fun getDirections(
+        promiseId: Long,
+        originLat: Double,
+        originLon: Double,
+        destLat: Double,
+        destLon: Double
+    ): DirectionResponse {
+        return api.getDirections(
+            promiseId = promiseId,
+            originLat = originLat,
+            originLon = originLon,
+            destLat = destLat,
+            destLon = destLon
+        )
     }
 }
