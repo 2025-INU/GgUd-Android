@@ -161,6 +161,16 @@ class RecommendPlaceViewModel(
         }
     }
 
+    fun resetMidpoint(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            runCatching {
+                repository.resetMidpoint(promiseId)
+            }.onSuccess {
+                onSuccess()
+            }.onFailure {  }
+        }
+    }
+
     class Factory(
         private val promiseId: Long,
         private val repository: PromiseRepository

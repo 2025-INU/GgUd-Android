@@ -2,6 +2,7 @@ package com.capstone.ggud.network
 
 import com.capstone.ggud.network.dto.ConfirmMidpointRequest
 import com.capstone.ggud.network.dto.CreatePromiseRequest
+import com.capstone.ggud.network.dto.DirectionResponse
 import com.capstone.ggud.network.dto.InviteCodeResponse
 import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
@@ -91,4 +92,18 @@ interface PromiseApi {
     suspend fun joinPromiseByInviteCode(
         @Path("inviteCode") inviteCode: String
     ): PromiseResponse
+
+    @POST("/api/v1/promises/{promiseId}/midpoint/reset")
+    suspend fun resetMidpoint(
+        @Path("promiseId") promiseId: Long
+    )
+
+    @GET("/api/v1/promises/{promiseId}/directions")
+    suspend fun getDirections(
+        @Path("promiseId") promiseId: Long,
+        @Query("originLat") originLat: Double,
+        @Query("originLon") originLon: Double,
+        @Query("destLat") destLat: Double,
+        @Query("destLon") destLon: Double
+    ): DirectionResponse
 }

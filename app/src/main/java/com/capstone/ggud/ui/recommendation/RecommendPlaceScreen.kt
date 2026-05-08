@@ -172,7 +172,12 @@ fun RecommendPlaceScreen(
                     stationName = stationName,
                     selectedTab = uiState.selectedTab,
                     onTabSelected = vm::selectTab,
-                    onAiRecommend = vm::requestAiRecommendation
+                    onAiRecommend = vm::requestAiRecommendation,
+                    onResetMidpoint = {
+                        vm.resetMidpoint {
+                            navController.popBackStack()
+                        }
+                    }
                 )
             }
         }
@@ -242,6 +247,7 @@ private fun RecommendTopBar(
     selectedTab: PlaceRecommendationTab,
     onTabSelected: (PlaceRecommendationTab) -> Unit,
     onAiRecommend: (String) -> Unit,
+    onResetMidpoint: () -> Unit
 ) {
     val types = listOf(
         PlaceTypeUiModel("전체", R.drawable.ic_all, PlaceRecommendationTab.ALL),
@@ -272,10 +278,7 @@ private fun RecommendTopBar(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) {
-                        val popped = navController.popBackStack()
-                        if (!popped) navController.navigateUp()
-                    }
+                    ) { onResetMidpoint() }
             )
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -296,7 +299,11 @@ private fun RecommendTopBar(
                     Text(
                         text = "변경",
                         fontSize = 13.sp,
-                        color = Color(0xFF0284C7)
+                        color = Color(0xFF0284C7),
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onResetMidpoint() }
                     )
                 }
             }
