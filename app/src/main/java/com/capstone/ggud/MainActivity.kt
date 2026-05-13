@@ -52,7 +52,24 @@ class MainActivity : ComponentActivity() {
                         composable("login") { LoginScreen(navController = navController) }
 
                         composable("home") { MainScreen(navController = navController) }
-                        composable("ongoing") { OngoingPromiseScreen(navController = navController) }
+                        composable(
+                            route = "ongoing/{promiseId}/{promiseTitle}"
+                        ) { backStackEntry ->
+
+                            val promiseId = backStackEntry.arguments
+                                ?.getString("promiseId")
+                                ?.toLongOrNull() ?: return@composable
+
+                            val promiseTitle = backStackEntry.arguments
+                                ?.getString("promiseTitle")
+                                ?: ""
+
+                            OngoingPromiseScreen(
+                                navController = navController,
+                                promiseId = promiseId,
+                                promiseTitle = promiseTitle
+                            )
+                        }
 
                         composable("notification") { NotificationScreen(navController = navController) }
 
@@ -81,7 +98,24 @@ class MainActivity : ComponentActivity() {
                             WaitingRoomScreen(navController = navController, promiseId = promiseId)
                         }
 
-                        composable("calculate") { CalculateScreen(navController = navController, "약속 이름") }
+                        composable(
+                            route = "calculate/{promiseId}/{promiseTitle}"
+                        ) { backStackEntry ->
+
+                            val promiseId = backStackEntry.arguments
+                                ?.getString("promiseId")
+                                ?.toLongOrNull() ?: return@composable
+
+                            val promiseTitle = backStackEntry.arguments
+                                ?.getString("promiseTitle")
+                                ?: ""
+
+                            CalculateScreen(
+                                navController = navController,
+                                promiseId = promiseId,
+                                promiseTitle = promiseTitle
+                            )
+                        }
 
                         composable("map") { KakaoMapScreen() }
                         composable("middle_point/{promiseId}",

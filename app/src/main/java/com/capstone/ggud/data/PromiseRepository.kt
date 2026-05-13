@@ -4,6 +4,7 @@ import com.capstone.ggud.network.PromiseApi
 import com.capstone.ggud.network.dto.ConfirmMidpointRequest
 import com.capstone.ggud.network.dto.CreatePromiseRequest
 import com.capstone.ggud.network.dto.DirectionResponse
+import com.capstone.ggud.network.dto.MapDataResponse
 import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
@@ -11,6 +12,7 @@ import com.capstone.ggud.network.dto.PlaceConfirmRequest
 import com.capstone.ggud.network.dto.PlaceRecommendationRequest
 import com.capstone.ggud.network.dto.PlaceRecommendationResponse
 import com.capstone.ggud.network.dto.PlaceRecommendationTab
+import com.capstone.ggud.network.dto.PromiseArrivalResponse
 import com.capstone.ggud.network.dto.PromiseResponse
 import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.network.dto.PromiseSummaryResponse
@@ -154,5 +156,21 @@ class PromiseRepository(
             destLat = destLat,
             destLon = destLon
         )
+    }
+
+    suspend fun getMapData(promiseId: Long): MapDataResponse {
+        return api.getMapData(promiseId)
+    }
+
+    suspend fun getPromiseArrivals(promiseId: Long): PromiseArrivalResponse {
+        return api.getPromiseArrivals(promiseId)
+    }
+
+    suspend fun completePromise(promiseId: Long) {
+        val response = api.completePromise(promiseId)
+
+        if (!response.isSuccessful) {
+            throw Exception("약속 종료 실패: ${response.code()}")
+        }
     }
 }

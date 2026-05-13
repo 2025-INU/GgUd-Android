@@ -178,3 +178,65 @@ data class PlaceConfirmRequest(
     val latitude: Double,
     val longitude: Double
 )
+
+data class DirectionResponse(
+    val routeOptions: List<RouteOption>
+)
+
+data class RouteOption(
+    val totalDuration: Int,
+    val totalDistance: Int,
+    val totalFare: Int,
+    val transferCount: Int,
+    val routes: List<RouteStep>
+)
+
+data class RouteStep(
+    val type: RouteStepType,
+    val instruction: String,
+    val duration: Int,
+    val distance: Int,
+    val lineName: String?,
+    val linestring: String?
+)
+
+enum class RouteStepType{
+    WALK, BUS, SUBWAY, TRANSFER
+}
+
+data class MapDataResponse(
+    val promiseId: Long,
+    val destination: MapMarker?,
+    val participantDepartures: List<ParticipantMarker>,
+    val recommendedMidpoints: List<MapMarker>,
+    val currentLocations: List<ParticipantMarker>
+)
+
+data class MapMarker(
+    val latitude: Double,
+    val longitude: Double,
+    val name: String,
+    val type: String
+)
+
+data class ParticipantMarker(
+    val userId: Long,
+    val nickname: String,
+    val profileImageUrl: String?,
+    val latitude: Double,
+    val longitude: Double,
+    val host: Boolean
+)
+
+data class PromiseArrivalResponse(
+    val participants: List<PromiseArrivalParticipant>,
+    val totalCount: Int,
+    val arrivedCount: Int
+)
+
+data class PromiseArrivalParticipant(
+    val userId: Long,
+    val nickname: String,
+    val arrived: Boolean,
+    val arrivedAt: String?
+)

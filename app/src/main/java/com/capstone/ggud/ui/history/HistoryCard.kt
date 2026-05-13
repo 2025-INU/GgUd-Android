@@ -1,5 +1,6 @@
 package com.capstone.ggud.ui.history
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,6 +33,7 @@ import com.capstone.ggud.ui.components.CardContent
 @Composable
 fun HistoryCard(
     navController: NavHostController,
+    id: Long,
     title: String,
     date: String,
     time: String,
@@ -68,7 +70,7 @@ fun HistoryCard(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
-                            navController.navigate("calculate")
+                            navController.navigate("calculate/${id}/${Uri.encode(title)}")
                         }
                 )
             }

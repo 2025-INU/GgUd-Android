@@ -4,12 +4,14 @@ import com.capstone.ggud.network.dto.ConfirmMidpointRequest
 import com.capstone.ggud.network.dto.CreatePromiseRequest
 import com.capstone.ggud.network.dto.DirectionResponse
 import com.capstone.ggud.network.dto.InviteCodeResponse
+import com.capstone.ggud.network.dto.MapDataResponse
 import com.capstone.ggud.network.dto.MidpointRecommendationResponse
 import com.capstone.ggud.network.dto.PagePromiseResponse
 import com.capstone.ggud.network.dto.ParticipantResponse
 import com.capstone.ggud.network.dto.PlaceConfirmRequest
 import com.capstone.ggud.network.dto.PlaceRecommendationRequest
 import com.capstone.ggud.network.dto.PlaceRecommendationResponse
+import com.capstone.ggud.network.dto.PromiseArrivalResponse
 import com.capstone.ggud.network.dto.PromiseResponse
 import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.network.dto.PromiseSummaryResponse
@@ -17,6 +19,7 @@ import com.capstone.ggud.network.dto.UpdateDepartureRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -106,4 +109,19 @@ interface PromiseApi {
         @Query("destLat") destLat: Double,
         @Query("destLon") destLon: Double
     ): DirectionResponse
+
+    @GET("/api/v1/promises/{promiseId}/map-data")
+    suspend fun getMapData(
+        @Path("promiseId") promiseId: Long
+    ): MapDataResponse
+
+    @GET("/api/v1/promises/{promiseId}/arrivals")
+    suspend fun getPromiseArrivals(
+        @Path("promiseId") promiseId: Long
+    ): PromiseArrivalResponse
+
+    @PATCH("/api/v1/promises/{promiseId}/complete")
+    suspend fun completePromise(
+        @Path("promiseId") promiseId: Long
+    ): Response<Unit>
 }

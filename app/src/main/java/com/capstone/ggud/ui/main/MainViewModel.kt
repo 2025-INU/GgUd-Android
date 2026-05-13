@@ -66,6 +66,20 @@ class MainViewModel(
         }
     }
 
+    fun completePromise(
+        promiseId: Long,
+        onSuccess: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                repo.completePromise(promiseId)
+            }.onSuccess {
+                load()
+                onSuccess()
+            }
+        }
+    }
+
     companion object {
         fun formatDate(iso: String): String {
             return runCatching {
