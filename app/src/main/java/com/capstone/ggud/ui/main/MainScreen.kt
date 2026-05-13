@@ -1,5 +1,6 @@
 package com.capstone.ggud.ui.main
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -149,7 +150,19 @@ fun MainScreen(navController: NavHostController) {
                         time = MainViewModel.formatTime(p.promiseDateTime),
                         people = p.participantCount,
                         spot = p.confirmedPlaceName ?: "장소 미정",
-                        onClick = { navController.navigate("ongoing") }
+                        onClick = { navController.navigate("ongoing/${p.id}/${Uri.encode(p.title)}") },
+                        onEndClick = {
+                            vm.completePromise(
+                                promiseId = p.id,
+                                onSuccess = {
+                                    Toast.makeText(
+                                        context,
+                                        "약속이 종료되었습니다.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            )
+                        }
                     )
                 }
             } else {
@@ -393,7 +406,8 @@ fun InProgressCard(
     time: String,
     people: Int,
     spot: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEndClick: () -> Unit
 ){
     Column(
         modifier = Modifier
@@ -414,10 +428,23 @@ fun InProgressCard(
         Row {
             CardContent(name, date, time)
             Spacer(modifier = Modifier.weight(1f))
-            Image(
-                painter = painterResource(R.drawable.ic_promise_in_progress),
-                contentDescription = null
-            )
+            Column {
+                Image(
+                    painter = painterResource(R.drawable.ic_promise_in_progress),
+                    contentDescription = null
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Image(
+                    painter = painterResource(R.drawable.btn_end),
+                    contentDescription = "약속종료 버튼",
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onEndClick() }
+                )
+            }
         }
         Spacer(modifier = Modifier.height(28.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -538,4 +565,6 @@ fun ConfirmedCard(
             }
         }
     }
+
+    Spacer(modifier = Modifier.height(16.dp))
 }
