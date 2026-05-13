@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
@@ -32,32 +35,58 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
-import com.capstone.ggud.ui.map.KakaoMapScreen
+import com.capstone.ggud.network.dto.RouteOption
+import com.capstone.ggud.network.dto.RouteStep
+import com.capstone.ggud.ui.map.OngoingMapScreen
 import com.capstone.ggud.ui.theme.pBlack
 
 //진행중인 약속 화면
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OngoingPromiseScreen(navController: NavHostController) {
+fun OngoingPromiseScreen(
+    navController: NavHostController,
+    promiseId: Long,
+    promiseTitle: String
+) {
     val scaffoldState = rememberBottomSheetScaffoldState()
+
+    val context = LocalContext.current
+    val viewModel: OngoingPromiseViewModel = viewModel(
+        factory = OngoingPromiseViewModelFactory(
+            context = context,
+            promiseId = promiseId
+        )
+    )
+
+    val uiState = viewModel.uiState
+    val selectedRouteIndex = viewModel.selectedRouteIndex
+    val selectedRouteOption = uiState.routeOptions.getOrNull(selectedRouteIndex)
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
-        sheetPeekHeight = 320.dp,
+        sheetPeekHeight = 360.dp,
         sheetContainerColor = Color.White,
         sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         sheetShadowElevation = 12.dp,
         sheetDragHandle = null,
         sheetContent = {
-            OngoingBottomSheetContent()
+            OngoingBottomSheetContent(
+                routeOptions = uiState.routeOptions,
+                selectedRouteIndex = selectedRouteIndex,
+                onRouteClick = { index ->
+                    viewModel.selectRoute(index)
+                }
+            )
         }
     ) { innerPadding ->
         Box(
@@ -65,15 +94,37 @@ fun OngoingPromiseScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            KakaoMapScreen(modifier = Modifier.matchParentSize())
+            OngoingMapScreen(
+                modifier = Modifier.matchParentSize(),
+                selectedRouteOption = selectedRouteOption,
+                destinationLat = uiState.destinationLat,
+                destinationLon = uiState.destinationLon,
+                participantLocations = uiState.participantLocations,
+                onCurrentLocationLoaded = { lat, lon ->
+                    viewModel.load(
+                        originLat = lat,
+                        originLon = lon
+                    )
+                }
+            )
 
-            OngoingTopBar(navController)
+            OngoingTopBar(
+                navController = navController,
+                promiseTitle = promiseTitle,
+                totalCount = uiState.totalCount,
+                arrivedCount = uiState.arrivedCount
+            )
         }
     }
 }
 
 @Composable
-private fun OngoingTopBar(navController: NavHostController) {
+private fun OngoingTopBar(
+    navController: NavHostController,
+    promiseTitle: String,
+    totalCount: Int,
+    arrivedCount: Int
+) {
     Column { //상단바
         Row(modifier = Modifier
             .fillMaxWidth()
@@ -109,7 +160,7 @@ private fun OngoingTopBar(navController: NavHostController) {
                     color = Color(0xFF111827)
                 )
                 Text(
-                    text = "회사 동료 점심 모임",
+                    text = promiseTitle,
                     fontSize = 14.sp,
                     color = Color(0xFF4B5563)
                 )
@@ -126,7 +177,12 @@ private fun OngoingTopBar(navController: NavHostController) {
                     .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center
             ){
-                Text("1/4 도착", color = Color(0xFF0369A1), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text(
+                    text = "${arrivedCount}/${totalCount} 도착",
+                    color = Color(0xFF0369A1),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
             }
         }
         Divider(thickness = 1.dp, color = Color(0xFFE5E7EB))
@@ -134,7 +190,11 @@ private fun OngoingTopBar(navController: NavHostController) {
 }
 
 @Composable
-private fun OngoingBottomSheetContent() {
+private fun OngoingBottomSheetContent(
+    routeOptions: List<RouteOption>,
+    selectedRouteIndex: Int,
+    onRouteClick: (Int) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,40 +218,118 @@ private fun OngoingBottomSheetContent() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        RouteInfoCard()
+        if (routeOptions.isEmpty()) {
+            EmptyRouteCard()
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.heightIn(max = 430.dp)
+            ) {
+                itemsIndexed(routeOptions) { index, routeOption ->
+                    RouteOptionCard(
+                        index = index,
+                        routeOption = routeOption,
+                        isSelected = selectedRouteIndex == index,
+                        onClick = { onRouteClick(index) }
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun RouteInfoCard() {
+private fun EmptyRouteCard() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Color(0xFFF9FAFB))
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "경로 정보를 불러오는 중입니다.",
+            fontSize = 15.sp,
+            color = Color(0xFF6B7280)
+        )
+    }
+}
+
+@Composable
+private fun RouteOptionCard(
+    index: Int,
+    routeOption: RouteOption,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+
+    val borderColor =
+        if (isSelected) Color(0xFF0EA5E9)
+        else Color(0xFFE5E7EB)
+
+    val backgroundColor =
+        if (isSelected) Color(0xFFF0F9FF)
+        else Color(0xFFF9FAFB)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(backgroundColor)
+            .border(
+                width = 1.5.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable(
+                interactionSource = remember {
+                    MutableInteractionSource()
+                },
+                indication = null
+            ) {
+                onClick()
+            }
             .padding(16.dp)
     ) {
-        // 참가자 정보
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painter = painterResource(R.drawable.ic_promise_profile),
-                contentDescription = null,
-                modifier = Modifier.size(40.dp)
-            )
 
-            Spacer(modifier = Modifier.width(12.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
 
-            Text(
-                text = "이은우",
-                fontSize = 16.sp,
-                fontWeight = Bold,
-                color = pBlack
-            )
+                Text(
+                    text = "경로 ${index + 1}",
+                    fontSize = 16.sp,
+                    fontWeight = Bold,
+                    color = pBlack
+                )
+
+                Text(
+                    text =
+                        "${routeOption.totalDuration}분 · " +
+                                "${formatDistance(routeOption.totalDistance)} · " +
+                                "${routeOption.transferCount}회 환승",
+
+                    fontSize = 13.sp,
+                    color = Color(0xFF6B7280)
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (isSelected) {
+                Text(
+                    text = "선택됨",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF0284C7)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 경로 정보 박스
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -199,12 +337,18 @@ private fun RouteInfoCard() {
                 .background(Color.White)
                 .padding(16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
                 Image(
                     painter = painterResource(R.drawable.ic_path),
                     contentDescription = null
                 )
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
                     text = "경로 정보",
                     fontSize = 15.sp,
@@ -215,36 +359,80 @@ private fun RouteInfoCard() {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = "[도보] 5분 · 300m",
-                fontSize = 15.sp,
-                lineHeight = 24.sp,
-                color = Color(0xFF4B5563)
-            )
-            Text(
-                text = "[지하철] 2호선 강남역 방면 · 20분",
-                fontSize = 15.sp,
-                lineHeight = 24.sp,
-                color = Color(0xFF4B5563)
-            )
-            Text(
-                text = "[환승]",
-                fontSize = 15.sp,
-                lineHeight = 24.sp,
-                color = Color(0xFF4B5563)
-            )
-            Text(
-                text = "[지하철] 신분당선 판교역 방면 · 15분",
-                fontSize = 15.sp,
-                lineHeight = 24.sp,
-                color = Color(0xFF4B5563)
-            )
-            Text(
-                text = "[도보] 5분 · 200m",
-                fontSize = 15.sp,
-                lineHeight = 24.sp,
-                color = Color(0xFF4B5563)
-            )
+            routeOption.routes.forEach { routeStep ->
+
+                RouteStepText(
+                    routeStep = routeStep
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun RouteStepText(
+    routeStep: RouteStep
+) {
+
+    Text(
+        text = buildRouteStepText(routeStep),
+        fontSize = 15.sp,
+        lineHeight = 24.sp,
+        color = Color(0xFF4B5563)
+    )
+}
+
+private fun buildRouteStepText(
+    routeStep: RouteStep
+): String {
+
+    val typeText = when (routeStep.type.name) {
+
+        "SUBWAY" -> "지하철"
+        "BUS" -> "버스"
+        "WALK" -> "도보"
+        "TRANSFER" -> "환승"
+
+        else -> routeStep.type.name
+    }
+
+    return when {
+
+        routeStep.type.name == "TRANSFER" -> {
+            "[환승] ${routeStep.instruction}"
+        }
+
+        !routeStep.lineName.isNullOrBlank() -> {
+
+            "[$typeText] " +
+                    "${routeStep.lineName} · " +
+                    "${routeStep.instruction} · " +
+                    "${routeStep.duration}분"
+        }
+
+        else -> {
+
+            "[$typeText] " +
+                    "${routeStep.instruction} · " +
+                    "${routeStep.duration}분 · " +
+                    formatDistance(routeStep.distance)
+        }
+    }
+}
+
+private fun formatDistance(
+    distanceMeter: Int
+): String {
+
+    return if (distanceMeter >= 1000) {
+
+        String.format(
+            "%.1fkm",
+            distanceMeter / 1000.0
+        )
+
+    } else {
+
+        "${distanceMeter}m"
     }
 }

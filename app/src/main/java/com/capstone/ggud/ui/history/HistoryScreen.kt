@@ -50,7 +50,6 @@ import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
-import com.capstone.ggud.network.PromiseApi
 import com.capstone.ggud.ui.theme.pBlack
 
 @Composable
@@ -214,6 +213,7 @@ fun HistoryScreen(navController: NavHostController) {
 
                             HistoryCard(
                                 navController = navController,
+                                id = p.id,
                                 title = p.title,
                                 date = date,
                                 time = time,
