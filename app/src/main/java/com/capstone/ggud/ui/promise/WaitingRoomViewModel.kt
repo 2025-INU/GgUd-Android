@@ -21,6 +21,8 @@ data class WaitingRoomUiState(
     val participantsLoading: Boolean = false,
     val participants: List<ParticipantResponse> = emptyList(),
 
+    val myUserId: Long? = null,
+
     val midpointStarted: Boolean = false,
 
     val error: String? = null
@@ -40,6 +42,27 @@ class WaitingRoomViewModel(application: Application)
 
     private val _uiState = MutableStateFlow(WaitingRoomUiState())
     val uiState: StateFlow<WaitingRoomUiState> = _uiState
+
+    private val userApi by lazy {
+        ApiClient.getUserApi(getApplication())
+    }
+
+    fun fetchMe() {
+        viewModelScope.launch {
+            runCatching {
+                userApi.getMyPage()
+            }.onSuccess { me ->
+                _uiState.value = _uiState.value.copy(
+                    myUserId = me.id,
+                    error = null
+                )
+            }.onFailure { e ->
+                _uiState.value = _uiState.value.copy(
+                    error = e.message
+                )
+            }
+        }
+    }
 
     //약속 요약
     fun fetchSummary(promiseId: Long) {
