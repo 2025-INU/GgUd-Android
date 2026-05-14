@@ -1,9 +1,12 @@
 package com.capstone.ggud.ui.calculate
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.capstone.ggud.data.PromiseRepository
+import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.network.dto.SettlementResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,15 +16,38 @@ data class CalculateUiState(
     val loading: Boolean = false,
     val settlement: SettlementResponse? = null,
     val myAmountText: String = "",
+    val myUserId: Long? = null,
     val error: String? = null
 )
 
 class CalculateViewModel(
+    application: Application,
     private val repo: PromiseRepository
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(CalculateUiState())
     val uiState: StateFlow<CalculateUiState> = _uiState
+
+    private val userApi by lazy {
+        ApiClient.getUserApi(getApplication())
+    }
+
+    fun fetchMe() {
+        viewModelScope.launch {
+            runCatching {
+                userApi.getMyPage()
+            }.onSuccess { me ->
+                _uiState.value = _uiState.value.copy(
+                    myUserId = me.id,
+                    error = null
+                )
+            }.onFailure { e ->
+                _uiState.value = _uiState.value.copy(
+                    error = e.message
+                )
+            }
+        }
+    }
 
     fun loadExpenses(promiseId: Long) {
         viewModelScope.launch {
@@ -34,7 +60,7 @@ class CalculateViewModel(
                     loading = false,
                     settlement = response,
                     myAmountText = response.expenses
-                        .firstOrNull()
+                        .firstOrNull { it.userId == _uiState.value.myUserId }
                         ?.paidAmount
                         ?.takeIf { it > 0 }
                         ?.toString()
@@ -108,11 +134,21 @@ class CalculateViewModelFactory(
     private val repo: PromiseRepository
 ) : ViewModelProvider.Factory {
 
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+    override fun <T : ViewModel> create(
+        modelClass: Class<T>,
+        extras: androidx.lifecycle.viewmodel.CreationExtras
+    ): T {
+
         if (modelClass.isAssignableFrom(CalculateViewModel::class.java)) {
+
+            val application =
+                extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]
+                    ?: throw IllegalStateException("Application not found")
+
             @Suppress("UNCHECKED_CAST")
-            return CalculateViewModel(repo) as T
+            return CalculateViewModel(application, repo) as T
         }
+
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

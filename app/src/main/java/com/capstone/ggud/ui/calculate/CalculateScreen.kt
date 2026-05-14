@@ -79,6 +79,7 @@ fun CalculateScreen(
     val uiState by vm.uiState.collectAsState()
 
     LaunchedEffect(promiseId) {
+        vm.fetchMe()
         vm.loadExpenses(promiseId)
     }
 
@@ -175,7 +176,11 @@ fun CalculateScreen(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(text = "각자 결제한 금액", fontWeight = Bold, fontSize = 18.sp, color = pBlack)
 
-                expenses.forEachIndexed { index, expense ->
+                val sortedExpenses = expenses.sortedByDescending {
+                    it.userId == uiState.myUserId
+                }
+
+                sortedExpenses.forEach { expense ->
                     val diff = expense.balanceAmount
 
                     val roleText = when {
@@ -184,10 +189,14 @@ fun CalculateScreen(
                         else -> ""
                     }
 
-                    val isEditable = index == 0 //TODO
+                    val isEditable = expense.userId == uiState.myUserId
+
+                    val displayName = if (isEditable) {
+                        "${expense.nickname} (나)"
+                    } else expense.nickname
 
                     PayAmountCard(
-                        name = expense.nickname,
+                        name = displayName,
                         roleText = roleText,
                         value = if (isEditable) {
                             uiState.myAmountText
@@ -219,8 +228,16 @@ fun CalculateScreen(
                         val isReceiver = diff > 0L
                         val roleText = if (isReceiver) "받을 사람" else "보낼 사람"
 
+                        val isMe = expense.userId == uiState.myUserId
+
+                        val displayName = if (isMe) {
+                            "${expense.nickname} (나)"
+                        } else {
+                            expense.nickname
+                        }
+
                         ResultCard(
-                            name = expense.nickname,
+                            name = displayName,
                             value = formatWon(abs(diff)),
                             isReceiver = isReceiver, //색/문구 바꾸기 위해 추가 파라미터
                             roleText = roleText //"받을 사람/보낼 사람" 텍스트
@@ -235,9 +252,24 @@ fun CalculateScreen(
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     transfers.forEach { transfer ->
+
+                        val fromName =
+                            if (transfer.fromUserId == uiState.myUserId) {
+                                "${transfer.fromNickname} (나)"
+                            } else {
+                                transfer.fromNickname
+                            }
+
+                        val toName =
+                            if (transfer.toUserId == uiState.myUserId) {
+                                "${transfer.toNickname} (나)"
+                            } else {
+                                transfer.toNickname
+                            }
+
                         RemittanceCard(
-                            rename = transfer.fromNickname,
-                            giname = transfer.toNickname,
+                            rename = fromName,
+                            giname = toName,
                             value = formatWon(transfer.amount)
                         )
                     }

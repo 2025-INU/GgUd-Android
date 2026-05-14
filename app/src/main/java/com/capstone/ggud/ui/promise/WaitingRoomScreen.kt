@@ -76,6 +76,7 @@ fun WaitingRoomScreen(
 
     LaunchedEffect(promiseId) {
         vm.fetchSummary(promiseId)
+        vm.fetchMe()
     }
 
     LaunchedEffect(promiseId) {
@@ -224,23 +225,33 @@ fun WaitingRoomScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
+            val sortedParticipants = uiState.participants.sortedByDescending {
+                it.userId == uiState.myUserId
+            }
+
             //참여자 목록
-            uiState.participants.forEachIndexed { idx, p ->
+            sortedParticipants.forEachIndexed { idx, p ->
+
+                val isMe = p.userId == uiState.myUserId
+
                 val nameText = buildString {
                     if (p.host) append("(호스트) ")
                     append(p.nickname)
-                    if (p.id == p.userId) append(" (나)")
+                    if (isMe) {
+                        append(" (나)")
+                    }
                 }
 
                 PeopleCard(
                     name = nameText,
                     enterLocation = p.locationSubmitted,
+                    isMe = isMe,
                     onClickEnterLocation = {
                         navController.navigate("promise_join/$promiseId")
                     }
                 )
 
-                if (idx != uiState.participants.lastIndex) {
+                if (idx != sortedParticipants.lastIndex) {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
@@ -294,6 +305,7 @@ fun WaitingRoomScreen(
 fun PeopleCard(
     name: String,
     enterLocation: Boolean,
+    isMe: Boolean,
     onClickEnterLocation: () -> Unit
 ) {
     Row(
@@ -303,6 +315,7 @@ fun PeopleCard(
             .clip(RoundedCornerShape(12.dp))
             .background(Color(0xFFF9FAFB))
             .clickable(
+                enabled = isMe,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) {
@@ -330,7 +343,11 @@ fun PeopleCard(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = if (enterLocation) "위치 입력 완료" else "클릭해서 위치 입력하기",
+                text = when {
+                    enterLocation -> "위치 입력 완료"
+                    isMe -> "클릭해서 위치 입력하기"
+                    else -> "위치 입력중..."
+                },
                 fontSize = 14.sp,
                 color = Color(0xFF4B5563)
             )
