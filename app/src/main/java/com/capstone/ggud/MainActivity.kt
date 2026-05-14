@@ -99,21 +99,16 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(
-                            route = "calculate/{promiseId}/{promiseTitle}"
+                            route = "calculate/{promiseId}"
                         ) { backStackEntry ->
 
                             val promiseId = backStackEntry.arguments
                                 ?.getString("promiseId")
                                 ?.toLongOrNull() ?: return@composable
 
-                            val promiseTitle = backStackEntry.arguments
-                                ?.getString("promiseTitle")
-                                ?: ""
-
                             CalculateScreen(
                                 navController = navController,
-                                promiseId = promiseId,
-                                promiseTitle = promiseTitle
+                                promiseId = promiseId
                             )
                         }
 

@@ -253,3 +253,36 @@ data class LocationSocketResponse(
     val longitude: Double,
     val timestamp: String
 )
+
+data class UpdateMyExpenseRequest(
+    val amount: Long
+)
+
+data class SettlementResponse(
+    val promiseId: Long,
+    val promiseName: String,
+    val totalAmount: Long,
+    val perPersonAmount: Long,
+    val participantCount: Int,
+    val settlementCompletedAt: String?,
+    val expenses: List<ExpenseRecordResponse>,
+    val transfers: List<SettlementTransferResponse>,
+    val settlementCompleted: Boolean
+)
+
+data class ExpenseRecordResponse(
+    val userId: Long,
+    val nickname: String,
+    val profileImageUrl: String?,
+    val paidAmount: Long,
+    val balanceAmount: Long,
+    val status: String
+)
+
+data class SettlementTransferResponse(
+    val fromUserId: Long,
+    val fromNickname: String,
+    val toUserId: Long,
+    val toNickname: String,
+    val amount: Long
+)
