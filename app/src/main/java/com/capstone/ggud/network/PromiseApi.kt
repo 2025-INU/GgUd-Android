@@ -15,7 +15,9 @@ import com.capstone.ggud.network.dto.PromiseArrivalResponse
 import com.capstone.ggud.network.dto.PromiseResponse
 import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.network.dto.PromiseSummaryResponse
+import com.capstone.ggud.network.dto.SettlementResponse
 import com.capstone.ggud.network.dto.UpdateDepartureRequest
+import com.capstone.ggud.network.dto.UpdateMyExpenseRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -124,4 +126,20 @@ interface PromiseApi {
     suspend fun completePromise(
         @Path("promiseId") promiseId: Long
     ): Response<Unit>
+
+    @GET("/api/v1/promises/{promiseId}/expenses")
+    suspend fun getExpenses(
+        @Path("promiseId") promiseId: Long
+    ): SettlementResponse
+
+    @PUT("/api/v1/promises/{promiseId}/expenses/my")
+    suspend fun updateMyExpense(
+        @Path("promiseId") promiseId: Long,
+        @Body request: UpdateMyExpenseRequest
+    ): SettlementResponse
+
+    @POST("/api/v1/promises/{promiseId}/expenses/settle")
+    suspend fun settleExpenses(
+        @Path("promiseId") promiseId: Long
+    ): SettlementResponse
 }

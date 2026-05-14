@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.capstone.ggud.data.PromiseLocationSocket
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.network.dto.RouteOption
@@ -40,6 +41,8 @@ class OngoingPromiseViewModel(
         private set
 
     private var hasLoaded = false
+
+    private var locationSocket: PromiseLocationSocket? = null
 
     init {
         loadArrivals()
@@ -119,6 +122,48 @@ class OngoingPromiseViewModel(
                 )
             }
         }
+    }
+
+    fun connectLocationSocket(token: String) {
+        if (locationSocket != null) return
+
+        locationSocket = PromiseLocationSocket(
+            token = token,
+            promiseId = promiseId,
+            onLocationReceived = { location ->
+                val updatedLocations =
+                    uiState.participantLocations
+                        .filterNot { it.userId == location.userId } +
+                            OngoingParticipantLocation(
+                                userId = location.userId,
+                                nickname = location.nickname,
+                                latitude = location.latitude,
+                                longitude = location.longitude,
+                                isArrived = false
+                            )
+
+                uiState = uiState.copy(
+                    participantLocations = updatedLocations
+                )
+            }
+        )
+
+        locationSocket?.connect()
+    }
+
+    fun sendMyLocation(
+        latitude: Double,
+        longitude: Double
+    ) {
+        locationSocket?.sendLocation(
+            latitude = latitude,
+            longitude = longitude
+        )
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        locationSocket?.disconnect()
     }
 }
 

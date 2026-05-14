@@ -30,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,10 +46,13 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
+import com.capstone.ggud.data.TokenStore
 import com.capstone.ggud.network.dto.RouteOption
 import com.capstone.ggud.network.dto.RouteStep
 import com.capstone.ggud.ui.map.OngoingMapScreen
 import com.capstone.ggud.ui.theme.pBlack
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 //진행중인 약속 화면
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,6 +75,17 @@ fun OngoingPromiseScreen(
     val uiState = viewModel.uiState
     val selectedRouteIndex = viewModel.selectedRouteIndex
     val selectedRouteOption = uiState.routeOptions.getOrNull(selectedRouteIndex)
+
+    LaunchedEffect(Unit) {
+
+        val token = withContext(Dispatchers.IO) {
+            TokenStore(context).getAccessToken()
+        }
+
+        if (!token.isNullOrBlank()) {
+            viewModel.connectLocationSocket(token)
+        }
+    }
 
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
@@ -104,6 +119,11 @@ fun OngoingPromiseScreen(
                     viewModel.load(
                         originLat = lat,
                         originLon = lon
+                    )
+
+                    viewModel.sendMyLocation(
+                        latitude = lat,
+                        longitude = lon
                     )
                 }
             )

@@ -70,7 +70,7 @@ fun HistoryCard(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
-                            navController.navigate("calculate/${id}/${Uri.encode(title)}")
+                            navController.navigate("calculate/${id}")
                         }
                 )
             }

@@ -1,6 +1,7 @@
 package com.capstone.ggud.ui.map
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +26,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.capstone.ggud.R
 import com.capstone.ggud.network.dto.RouteOption
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.kakao.vectormap.KakaoMap
@@ -68,6 +72,10 @@ fun OngoingMapScreen(
 
     var currentLocation by remember {
         mutableStateOf<LatLng?>(null)
+    }
+
+    var locationCallback by remember {
+        mutableStateOf<LocationCallback?>(null)
     }
 
     var kakaoMap by remember(mapKey) {
@@ -116,6 +124,45 @@ fun OngoingMapScreen(
             }
     }
 
+    @SuppressLint("MissingPermission")
+    fun startLocationUpdates() {
+        if (!hasLocationPermission()) return
+        if (locationCallback != null) return
+
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            5000L
+        )
+            .setMinUpdateIntervalMillis(3000L)
+            .build()
+
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                val location = result.lastLocation ?: return
+
+                val latLng = LatLng.from(
+                    location.latitude,
+                    location.longitude
+                )
+
+                currentLocation = latLng
+
+                onCurrentLocationLoaded(
+                    location.latitude,
+                    location.longitude
+                )
+            }
+        }
+
+        locationCallback = callback
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            callback,
+            context.mainLooper
+        )
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -126,12 +173,14 @@ fun OngoingMapScreen(
 
         if (granted) {
             loadCurrentLocation()
+            startLocationUpdates()
         }
     }
 
     LaunchedEffect(Unit) {
         if (hasLocationPermission()) {
             loadCurrentLocation()
+            startLocationUpdates()
         } else {
             permissionLauncher.launch(
                 arrayOf(
@@ -181,6 +230,14 @@ fun OngoingMapScreen(
         }
     )
 
+    DisposableEffect(Unit) {
+        onDispose {
+            locationCallback?.let { callback ->
+                fusedLocationClient.removeLocationUpdates(callback)
+            }
+        }
+    }
+
     DisposableEffect(mapView) {
         val listener = View.OnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
 
@@ -215,7 +272,6 @@ fun OngoingMapScreen(
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
                     mapView.resume()
-                    loadCurrentLocation()
                 }
 
                 Lifecycle.Event.ON_PAUSE -> {

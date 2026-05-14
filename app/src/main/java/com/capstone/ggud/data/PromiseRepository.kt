@@ -16,7 +16,9 @@ import com.capstone.ggud.network.dto.PromiseArrivalResponse
 import com.capstone.ggud.network.dto.PromiseResponse
 import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.network.dto.PromiseSummaryResponse
+import com.capstone.ggud.network.dto.SettlementResponse
 import com.capstone.ggud.network.dto.UpdateDepartureRequest
+import com.capstone.ggud.network.dto.UpdateMyExpenseRequest
 
 class PromiseRepository(
     private val api: PromiseApi
@@ -172,5 +174,23 @@ class PromiseRepository(
         if (!response.isSuccessful) {
             throw Exception("약속 종료 실패: ${response.code()}")
         }
+    }
+
+    suspend fun getExpenses(promiseId: Long): SettlementResponse {
+        return api.getExpenses(promiseId)
+    }
+
+    suspend fun updateMyExpense(
+        promiseId: Long,
+        amount: Long
+    ): SettlementResponse {
+        return api.updateMyExpense(
+            promiseId = promiseId,
+            request = UpdateMyExpenseRequest(amount = amount)
+        )
+    }
+
+    suspend fun settleExpenses(promiseId: Long): SettlementResponse {
+        return api.settleExpenses(promiseId)
     }
 }
