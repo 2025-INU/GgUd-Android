@@ -240,3 +240,16 @@ data class PromiseArrivalParticipant(
     val arrived: Boolean,
     val arrivedAt: String?
 )
+
+data class LocationSendRequest(
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class LocationSocketResponse(
+    val userId: Long,
+    val nickname: String,
+    val latitude: Double,
+    val longitude: Double,
+    val timestamp: String
+)
