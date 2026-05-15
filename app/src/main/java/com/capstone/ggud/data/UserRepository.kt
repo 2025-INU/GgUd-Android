@@ -3,12 +3,13 @@ package com.capstone.ggud.data
 import com.capstone.ggud.network.UserApi
 import com.capstone.ggud.network.dto.UpdateProfileRequest
 import com.capstone.ggud.network.dto.UserResponse
+import okhttp3.MultipartBody
 
 class UserRepository(
-    private val userApi: UserApi
+    private val api: UserApi
 ) {
     suspend fun getMyPage(): UserResponse {
-        return userApi.getMyPage()
+        return api.getMyPage()
     }
 
     suspend fun updateMy(
@@ -19,6 +20,10 @@ class UserRepository(
             nickname = nickname,
             profileImageUrl = profileImageUrl
         )
-        return userApi.updateMy(request)
+        return api.updateMy(request)
+    }
+
+    suspend fun uploadProfileImage(image: MultipartBody.Part): UserResponse {
+        return api.uploadProfileImage(image)
     }
 }

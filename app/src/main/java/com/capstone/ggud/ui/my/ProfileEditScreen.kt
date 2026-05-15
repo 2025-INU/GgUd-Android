@@ -1,5 +1,9 @@
 package com.capstone.ggud.ui.my
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -58,6 +63,29 @@ fun ProfileEditScreen(navController: NavHostController) {
 
     val uiState by viewModel.uiState.collectAsState()
 
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.onProfileImageSelected(uri)
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearErrorMessage()
+        }
+    }
+
+    LaunchedEffect(uiState.saveSuccess) {
+        if (uiState.saveSuccess) {
+            Toast.makeText(context, "프로필이 수정되었습니다", Toast.LENGTH_SHORT).show()
+            viewModel.clearSaveSuccess()
+            navController.popBackStack()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -90,32 +118,53 @@ fun ProfileEditScreen(navController: NavHostController) {
                     .size(96.dp)
                     .align(Alignment.CenterHorizontally)
             ) {
-                if (uiState.profileImageUrlInput.isNotBlank()) {
-                    AsyncImage(
-                        model = uiState.profileImageUrlInput,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(96.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop,
-                        placeholder = painterResource(R.drawable.profile),
-                        error = painterResource(R.drawable.profile)
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(R.drawable.profile),
-                        contentDescription = null,
-                        modifier = Modifier.size(96.dp)
-                    )
+                when {
+                    uiState.selectedImageUri != null -> {
+                        AsyncImage(
+                            model = uiState.selectedImageUri,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(96.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(R.drawable.profile),
+                            error = painterResource(R.drawable.profile)
+                        )
+                    }
+
+                    uiState.profileImageUrlInput.isNotBlank() -> {
+                        AsyncImage(
+                            model = uiState.profileImageUrlInput,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(96.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(R.drawable.profile),
+                            error = painterResource(R.drawable.profile)
+                        )
+                    }
+
+                    else -> {
+                        Image(
+                            painter = painterResource(R.drawable.profile),
+                            contentDescription = null,
+                            modifier = Modifier.size(96.dp)
+                        )
+                    }
                 }
 
-                Image( //프로필수정 버튼 (기능X)
+                Image( //프로필수정 버튼
                     painter = painterResource(R.drawable.btn_edit),
                     contentDescription = "프로필사진 수정",
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .size(32.dp)
                         .offset(x = 8.dp, y = 6.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { imagePickerLauncher.launch("image/*") }
                 )
             }
 
@@ -159,7 +208,7 @@ fun ProfileEditScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Box( //이름 텍스트필드 (기능X)
+            Box( //이름
                 modifier = Modifier
                     .width(279.dp)
                     .wrapContentHeight()
@@ -204,8 +253,7 @@ fun ProfileEditScreen(navController: NavHostController) {
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    viewModel.updateMyProfile()
-                    navController.popBackStack()
+                    viewModel.updateMyProfile(context)
                 }
         )
 
