@@ -249,6 +249,7 @@ data class LocationSendRequest(
 data class LocationSocketResponse(
     val userId: Long,
     val nickname: String,
+    val profileImageUrl: String?,
     val latitude: Double,
     val longitude: Double,
     val timestamp: String
