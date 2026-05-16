@@ -80,7 +80,11 @@ fun CalculateScreen(
 
     LaunchedEffect(promiseId) {
         vm.fetchMe()
-        vm.loadExpenses(promiseId)
+
+        while (true) {
+            vm.loadExpenses(promiseId)
+            kotlinx.coroutines.delay(5000)
+        }
     }
 
     LaunchedEffect(uiState.myAmountText) {
@@ -181,11 +185,11 @@ fun CalculateScreen(
                 }
 
                 sortedExpenses.forEach { expense ->
-                    val diff = expense.balanceAmount
+                    val status = expense.status
 
-                    val roleText = when {
-                        diff > 0L -> "받을 사람"
-                        diff < 0L -> "보낼 사람"
+                    val roleText = when (status) {
+                        "RECEIVER" -> "받을 사람"
+                        "SENDER" -> "보낼 사람"
                         else -> ""
                     }
 
@@ -224,8 +228,11 @@ fun CalculateScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
                     expenses.forEach { expense ->
+                        val status = expense.status
+                        if (status != "RECEIVER" && status != "SENDER") return@forEach
+
                         val diff = expense.balanceAmount
-                        val isReceiver = diff > 0L
+                        val isReceiver = status == "RECEIVER"
                         val roleText = if (isReceiver) "받을 사람" else "보낼 사람"
 
                         val isMe = expense.userId == uiState.myUserId
