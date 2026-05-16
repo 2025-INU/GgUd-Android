@@ -108,6 +108,7 @@ class OngoingPromiseViewModel(
                             OngoingParticipantLocation(
                                 userId = participant.userId,
                                 nickname = participant.nickname,
+                                profileImageUrl = participant.profileImageUrl,
                                 latitude = participant.latitude,
                                 longitude = participant.longitude,
                                 isArrived = false
@@ -131,15 +132,20 @@ class OngoingPromiseViewModel(
             token = token,
             promiseId = promiseId,
             onLocationReceived = { location ->
+                val previous = uiState.participantLocations
+                    .firstOrNull { it.userId == location.userId }
+
                 val updatedLocations =
                     uiState.participantLocations
                         .filterNot { it.userId == location.userId } +
                             OngoingParticipantLocation(
                                 userId = location.userId,
                                 nickname = location.nickname,
+                                profileImageUrl = location.profileImageUrl
+                                    ?: previous?.profileImageUrl,
                                 latitude = location.latitude,
                                 longitude = location.longitude,
-                                isArrived = false
+                                isArrived = previous?.isArrived ?: false
                             )
 
                 uiState = uiState.copy(
