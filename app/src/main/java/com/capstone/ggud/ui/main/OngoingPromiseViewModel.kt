@@ -20,6 +20,7 @@ data class OngoingPromiseUiState(
     val promiseTitle: String = "",
     val destinationLat: Double? = null,
     val destinationLon: Double? = null,
+    val destinationName: String = "",
     val routeOptions: List<RouteOption> = emptyList(),
     val participantLocations: List<OngoingParticipantLocation> = emptyList(),
     val totalCount: Int = 0,
@@ -102,6 +103,7 @@ class OngoingPromiseViewModel(
                     isLoading = false,
                     destinationLat = destination?.latitude,
                     destinationLon = destination?.longitude,
+                    destinationName = destination?.name.orEmpty(),
                     routeOptions = directions?.routeOptions ?: emptyList(),
                     participantLocations =
                         mapData.currentLocations.map { participant ->

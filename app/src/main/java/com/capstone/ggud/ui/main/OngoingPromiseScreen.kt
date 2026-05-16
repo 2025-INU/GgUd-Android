@@ -98,6 +98,7 @@ fun OngoingPromiseScreen(
             OngoingBottomSheetContent(
                 routeOptions = uiState.routeOptions,
                 selectedRouteIndex = selectedRouteIndex,
+                destinationName = uiState.destinationName,
                 onRouteClick = { index ->
                     viewModel.selectRoute(index)
                 }
@@ -213,6 +214,7 @@ private fun OngoingTopBar(
 private fun OngoingBottomSheetContent(
     routeOptions: List<RouteOption>,
     selectedRouteIndex: Int,
+    destinationName: String,
     onRouteClick: (Int) -> Unit
 ) {
     Column(
@@ -229,12 +231,21 @@ private fun OngoingBottomSheetContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = "길찾기",
-            fontSize = 18.sp,
-            fontWeight = Bold,
-            color = pBlack
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "길찾기",
+                fontSize = 18.sp,
+                fontWeight = Bold,
+                color = pBlack
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "도착지: ${destinationName}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = pBlack
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
