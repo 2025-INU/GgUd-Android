@@ -103,7 +103,8 @@ data class Coordinate(
 data class MidpointRecommendationResponse(
     val calculatedMidpoint: Coordinate,
     val recommendedStations: List<StationRecommendation>,
-    val participantCount: Int
+    val participantCount: Int,
+    val host: Boolean
 )
 
 data class ParticipantTravelInfo(
@@ -146,6 +147,7 @@ enum class PlaceRecommendationTab {
 
 data class PlaceRecommendationResponse(
     val recommendations: List<PlaceRecommendationItem>,
+    val host: Boolean,
     @SerializedName("promise_id")
     val promiseId: Long
 )

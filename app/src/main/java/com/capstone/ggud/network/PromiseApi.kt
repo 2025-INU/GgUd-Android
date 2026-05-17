@@ -18,6 +18,7 @@ import com.capstone.ggud.network.dto.PromiseSummaryResponse
 import com.capstone.ggud.network.dto.SettlementResponse
 import com.capstone.ggud.network.dto.UpdateDepartureRequest
 import com.capstone.ggud.network.dto.UpdateMyExpenseRequest
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -53,6 +54,11 @@ interface PromiseApi {
     suspend fun getPromiseSummary(
         @Path("promiseId") promiseId: Long
     ): PromiseSummaryResponse
+
+    @GET("/api/v1/promises/{promiseId}/status")
+    suspend fun getPromiseStatus(
+        @Path("promiseId") promiseId: Long
+    ): ResponseBody
 
     @PUT("/api/v1/promises/{promiseId}/departure")
     suspend fun updateDeparture(

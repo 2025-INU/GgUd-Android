@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.dto.PlaceRecommendationItem
 import com.capstone.ggud.network.dto.PlaceRecommendationTab
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,9 @@ data class RecommendPlaceUiState(
     val aiQuery: String = "",
     val places: List<PlaceRecommendationItem> = emptyList(),
     val selectedPlaceIds: Set<String> = emptySet(),
-    val confirmSuccess: Boolean = false
+    val confirmSuccess: Boolean = false,
+    val isHost: Boolean = false,
+    val status: String? = null
 )
 
 class RecommendPlaceViewModel(
@@ -32,7 +35,42 @@ class RecommendPlaceViewModel(
     val uiState: StateFlow<RecommendPlaceUiState> = _uiState.asStateFlow()
 
     init {
-        loadPlaceRecommendations()
+        watchPromiseStatus()
+    }
+
+    private fun watchPromiseStatus() {
+        viewModelScope.launch {
+            while (true) {
+                repository.getPromiseStatus(promiseId)
+                    .onSuccess { rawStatus ->
+                        val status = rawStatus
+                            .trim()
+                            .removeSurrounding("\"")
+
+                        _uiState.update {
+                            it.copy(
+                                status = status,
+                                isLoading = status == "MIDPOINT_CONFIRMED"
+                            )
+                        }
+
+                        if (status == "MIDPOINT_CONFIRMED") {
+                            loadPlaceRecommendations()
+                            return@launch
+                        }
+                    }
+                    .onFailure {
+                        _uiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                errorMessage = it.message
+                            )
+                        }
+                    }
+
+                delay(3000)
+            }
+        }
     }
 
     fun selectTab(tab: PlaceRecommendationTab) {
@@ -42,7 +80,7 @@ class RecommendPlaceViewModel(
                 selectedPlaceIds = emptySet()
             )
         }
-        loadPlaceRecommendations()
+        loadPlaceRecommendationsIfReady()
     }
 
     fun requestAiRecommendation(query: String) {
@@ -52,7 +90,7 @@ class RecommendPlaceViewModel(
                 selectedPlaceIds = emptySet()
             )
         }
-        loadPlaceRecommendations()
+        loadPlaceRecommendationsIfReady()
     }
 
     fun clearAiQuery() {
@@ -62,7 +100,7 @@ class RecommendPlaceViewModel(
                 selectedPlaceIds = emptySet()
             )
         }
-        loadPlaceRecommendations()
+        loadPlaceRecommendationsIfReady()
     }
 
     fun togglePlace(placeId: String) {
@@ -126,6 +164,12 @@ class RecommendPlaceViewModel(
         }
     }
 
+    private fun loadPlaceRecommendationsIfReady() {
+        if (_uiState.value.status == "MIDPOINT_CONFIRMED") {
+            loadPlaceRecommendations()
+        }
+    }
+
     private fun loadPlaceRecommendations() {
         viewModelScope.launch {
             val currentState = _uiState.value
@@ -147,7 +191,8 @@ class RecommendPlaceViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        places = response.recommendations
+                        places = response.recommendations,
+                        isHost = response.host
                     )
                 }
             }.onFailure {

@@ -38,6 +38,7 @@ import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
@@ -58,6 +59,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -174,11 +176,24 @@ fun RecommendPlaceScreen(
                     onTabSelected = vm::selectTab,
                     onAiRecommend = vm::requestAiRecommendation,
                     onResetMidpoint = {
-                        vm.resetMidpoint {
+                        if (uiState.isHost) {
+                            vm.resetMidpoint { navController.popBackStack() }
+                        } else {
                             navController.popBackStack()
                         }
                     }
                 )
+
+                if (uiState.status == "SELECTING_MIDPOINT") {
+                    WaitingMidpointConfirmedBanner(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 150.dp)
+                            .width(327.dp)
+                            .wrapContentHeight()
+                            .zIndex(2f)
+                    )
+                }
             }
         }
 
@@ -209,7 +224,15 @@ fun RecommendPlaceScreen(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            vm.confirmAnySelectedPlace()
+                            if (uiState.isHost) {
+                                vm.confirmAnySelectedPlace()
+                            } else {
+                                navController.navigate("home") {
+                                    popUpTo("home") {
+                                        inclusive = true
+                                    }
+                                }
+                            }
                         }
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     contentAlignment = Alignment.Center
@@ -228,7 +251,11 @@ fun RecommendPlaceScreen(
                         Spacer(modifier = Modifier.width(12.dp))
 
                         Text(
-                            text = "${selectedCount}개 장소로 약속 확정하기",
+                            text = if (uiState.isHost) {
+                                "${selectedCount}개 장소로 약속 확정하기"
+                            } else {
+                                "홈으로 돌아가기"
+                            },
                             fontSize = 14.sp,
                             fontWeight = Bold,
                             color = Color.White
@@ -403,6 +430,39 @@ private fun PlaceTypeButton(
             color = if (selected) Color.White else Color(0xFF4B5563),
             modifier = Modifier.offset(y=-(0.9).dp)
         )
+    }
+}
+
+@Composable
+private fun WaitingMidpointConfirmedBanner(
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 6.dp,
+        color = Color.White
+    ) {
+        Column(
+            modifier = Modifier.padding(17.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "호스트가 중간지점을 선택 중이에요",
+                fontSize = 18.sp,
+                fontWeight = Bold,
+                color = pBlack
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "중간지점이 확정되면 추천 장소가 자동으로 표시돼요",
+                fontSize = 14.sp,
+                color = Color(0xFF4B5563),
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
