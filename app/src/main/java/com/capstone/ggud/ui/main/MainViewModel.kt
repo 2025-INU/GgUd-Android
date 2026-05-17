@@ -46,6 +46,7 @@ class MainViewModel(
             }
 
             val upcomingStatuses = listOf(
+                PromiseStatus.RECRUITING,
                 PromiseStatus.SELECTING_MIDPOINT,
                 PromiseStatus.MIDPOINT_CONFIRMED,
                 PromiseStatus.PLACE_CONFIRMED

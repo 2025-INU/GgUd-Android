@@ -177,11 +177,12 @@ fun RecommendPlaceScreen(
                     onAiRecommend = vm::requestAiRecommendation,
                     onResetMidpoint = {
                         if (uiState.isHost) {
-                            vm.resetMidpoint { navController.popBackStack() }
+                            vm.resetMidpoint { navController.navigate("middle_point/$promiseId") }
                         } else {
-                            navController.popBackStack()
+                            navController.navigate("middle_point/$promiseId")
                         }
-                    }
+                    },
+                    onHomeClick = { navController.navigate("home") }
                 )
 
                 if (uiState.status == "SELECTING_MIDPOINT") {
@@ -274,7 +275,8 @@ private fun RecommendTopBar(
     selectedTab: PlaceRecommendationTab,
     onTabSelected: (PlaceRecommendationTab) -> Unit,
     onAiRecommend: (String) -> Unit,
-    onResetMidpoint: () -> Unit
+    onResetMidpoint: () -> Unit,
+    onHomeClick: () -> Unit
 ) {
     val types = listOf(
         PlaceTypeUiModel("전체", R.drawable.ic_all, PlaceRecommendationTab.ALL),
@@ -347,6 +349,17 @@ private fun RecommendTopBar(
                         indication = null
                     ) { showDialog = true }
             )
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Image(
+                painter = painterResource(R.drawable.btn_home),
+                contentDescription = "메인으로",
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { onHomeClick() }
+            )
+
             AiRecommendDialog(
                 showDialog = showDialog,
                 onDismiss = { showDialog = false },

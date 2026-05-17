@@ -180,12 +180,21 @@ fun MainScreen(navController: NavHostController) {
             } else {
                 list.forEach { p ->
                     when (p.status) {
+                        PromiseStatus.RECRUITING,
                         PromiseStatus.SELECTING_MIDPOINT,
                         PromiseStatus.MIDPOINT_CONFIRMED -> {
                             SimpleUpcomingCard(
                                 name = p.title,
                                 date = MainViewModel.formatDate(p.promiseDateTime),
                                 time = MainViewModel.formatTime(p.promiseDateTime),
+                                onClick = {
+                                    when (p.status) {
+                                        PromiseStatus.RECRUITING -> { navController.navigate("waiting/${p.id}") }
+                                        PromiseStatus.SELECTING_MIDPOINT -> { navController.navigate("middle_point/${p.id}") }
+                                        PromiseStatus.MIDPOINT_CONFIRMED -> { navController.navigate("recommend_place/${p.id}/${Uri.encode(p.midpointStationName.orEmpty())}") }
+                                        else -> Unit
+                                    }
+                                },
                                 onCancelClick = {
                                     vm.cancelPromise(
                                         promiseId = p.id,
@@ -656,6 +665,7 @@ fun SimpleUpcomingCard(
     name: String,
     date: String,
     time: String,
+    onClick: () -> Unit,
     onCancelClick: () -> Unit
 ) {
     Column(
@@ -668,6 +678,10 @@ fun SimpleUpcomingCard(
                 color = Color(0xFFE5E7EB),
                 shape = RoundedCornerShape(16.dp)
             )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
             .padding(25.dp)
     ) {
         Row {
