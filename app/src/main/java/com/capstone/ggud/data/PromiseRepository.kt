@@ -190,6 +190,14 @@ class PromiseRepository(
         }
     }
 
+    suspend fun cancelPromise(promiseId: Long) {
+        val response = api.cancelPromise(promiseId)
+
+        if (!response.isSuccessful) {
+            throw Exception("약속 취소 실패: ${response.code()}")
+        }
+    }
+
     suspend fun getExpenses(promiseId: Long): SettlementResponse {
         return api.getExpenses(promiseId)
     }

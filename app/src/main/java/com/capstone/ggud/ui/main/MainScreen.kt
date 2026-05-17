@@ -135,7 +135,10 @@ fun MainScreen(navController: NavHostController) {
                 modifier = Modifier.clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
-                ) { promise = !promise }
+                ) {
+                    promise = !promise
+                    vm.load()
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -162,6 +165,13 @@ fun MainScreen(navController: NavHostController) {
                                         "약속이 종료되었습니다.",
                                         Toast.LENGTH_SHORT
                                     ).show()
+                                },
+                                onFailure = {
+                                    Toast.makeText(
+                                        context,
+                                        "호스트가 약속을 종료할 수 있습니다.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             )
                         }
@@ -169,14 +179,67 @@ fun MainScreen(navController: NavHostController) {
                 }
             } else {
                 list.forEach { p ->
-                    ConfirmedCard(
-                        name = p.title,
-                        date = MainViewModel.formatDate(p.promiseDateTime),
-                        time = MainViewModel.formatTime(p.promiseDateTime),
-                        people = p.participantCount,
-                        profileImageUrls = uiState.profileImageUrlsByPromiseId[p.id].orEmpty(),
-                        spot = p.confirmedPlaceName ?: "장소 미정"
-                    )
+                    when (p.status) {
+                        PromiseStatus.SELECTING_MIDPOINT,
+                        PromiseStatus.MIDPOINT_CONFIRMED -> {
+                            SimpleUpcomingCard(
+                                name = p.title,
+                                date = MainViewModel.formatDate(p.promiseDateTime),
+                                time = MainViewModel.formatTime(p.promiseDateTime),
+                                onCancelClick = {
+                                    vm.cancelPromise(
+                                        promiseId = p.id,
+                                        onSuccess = {
+                                            Toast.makeText(
+                                                context,
+                                                "약속이 취소되었습니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        },
+                                        onFailure = {
+                                            Toast.makeText(
+                                                context,
+                                                "호스트가 약속을 취소할 수 있습니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    )
+                                }
+                            )
+                        }
+
+                        PromiseStatus.PLACE_CONFIRMED -> {
+                            ConfirmedCard(
+                                name = p.title,
+                                date = MainViewModel.formatDate(p.promiseDateTime),
+                                time = MainViewModel.formatTime(p.promiseDateTime),
+                                people = p.participantCount,
+                                profileImageUrls = uiState.profileImageUrlsByPromiseId[p.id].orEmpty(),
+                                spot = p.confirmedPlaceName ?: "장소 미정",
+                                onCancelClick = {
+                                    vm.cancelPromise(
+                                        promiseId = p.id,
+                                        onSuccess = {
+                                            Toast.makeText(
+                                                context,
+                                                "약속이 취소되었습니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        },
+                                        onFailure = {
+                                            Toast.makeText(
+                                                context,
+                                                "호스트가 약속을 취소할 수 있습니다.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    )
+                                }
+                            )
+                        }
+
+                        else -> Unit
+                    }
                 }
             }
         }
@@ -489,7 +552,8 @@ fun ConfirmedCard(
     time: String,
     people: Int,
     profileImageUrls: List<String?>,
-    spot: String
+    spot: String,
+    onCancelClick: () -> Unit
 ){
     Column(
         modifier = Modifier
@@ -506,10 +570,23 @@ fun ConfirmedCard(
         Row {
             CardContent(name, date, time)
             Spacer(modifier = Modifier.weight(1f))
-            Image(
-                painter = painterResource(R.drawable.ic_promise_confirmed),
-                contentDescription = null
-            )
+            Column {
+                Image(
+                    painter = painterResource(R.drawable.ic_promise_confirmed),
+                    contentDescription = null
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Image(
+                    painter = painterResource(R.drawable.btn_cancel),
+                    contentDescription = "약속취소 버튼",
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onCancelClick() }
+                )
+            }
         }
         Spacer(modifier = Modifier.height(28.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -566,6 +643,51 @@ fun ConfirmedCard(
                     text = spot,
                     fontSize = 14.sp,
                     color = Color(0xFF4B5563)
+                )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+}
+
+@Composable
+fun SimpleUpcomingCard(
+    name: String,
+    date: String,
+    time: String,
+    onCancelClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .width(327.dp)
+            .wrapContentHeight()
+            .heightIn(min = 150.dp)
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE5E7EB),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(25.dp)
+    ) {
+        Row {
+            CardContent(name, date, time)
+            Spacer(modifier = Modifier.weight(1f))
+            Column {
+                Image(
+                    painter = painterResource(R.drawable.ic_promise_upcoming),
+                    contentDescription = null
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Image(
+                    painter = painterResource(R.drawable.btn_cancel),
+                    contentDescription = "약속취소 버튼",
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onCancelClick() }
                 )
             }
         }
