@@ -24,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -124,7 +126,10 @@ fun WaitingRoomScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-        TopBar(navController, "약속 대기방")
+        WaitingTopBar(
+            navController = navController,
+            onHomeClick = { navController.navigate("home") }
+        )
 
         val scrollState = rememberScrollState()
         Column(
@@ -318,6 +323,57 @@ fun WaitingRoomScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+fun WaitingTopBar(
+    navController: NavHostController,
+    onHomeClick: () -> Unit
+) {
+    Column {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .size(375.dp, 69.dp)
+            .background(Color.White)
+            .padding(24.dp, 17.dp)
+            .zIndex(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image( //뒤로가기 버튼
+                painter = painterResource(R.drawable.btn_back),
+                contentDescription = "뒤로가기",
+                modifier = Modifier
+                    .padding(start = (7.7).dp)
+                    .size(21.dp, 20.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        val popped = navController.popBackStack()
+                        //혹시 pop이 안 되면 navigateUp 시도
+                        if (!popped) navController.navigateUp()
+                    }
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "약속 대기방",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF111827)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Image( //홈 버튼
+                painter = painterResource(R.drawable.btn_home),
+                contentDescription = "메인으로",
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onHomeClick() }
+            )
+        }
+        Divider(thickness = 1.dp, color = Color(0xFFE5E7EB))
     }
 }
 

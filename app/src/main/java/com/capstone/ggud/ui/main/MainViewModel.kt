@@ -45,16 +45,30 @@ class MainViewModel(
                 )
             }
 
+            val upcomingStatuses = listOf(
+                PromiseStatus.RECRUITING,
+                PromiseStatus.SELECTING_MIDPOINT,
+                PromiseStatus.MIDPOINT_CONFIRMED,
+                PromiseStatus.PLACE_CONFIRMED
+            )
+
             val upcomingResult = runCatching {
-                repo.getMyPromises(
-                    status = PromiseStatus.PLACE_CONFIRMED,
-                    page = 0,
-                    size = 50
-                )
+                upcomingStatuses.map { status ->
+                    async {
+                        repo.getMyPromises(
+                            status = status,
+                            page = 0,
+                            size = 50
+                        ).content
+                    }
+                }.awaitAll()
+                    .flatten()
+                    .distinctBy { it.id }
+                    .sortedBy { it.promiseDateTime }
             }
 
             val inProgress = inProgressResult.getOrNull()?.content ?: emptyList()
-            val upcoming = upcomingResult.getOrNull()?.content ?: emptyList()
+            val upcoming = upcomingResult.getOrNull() ?: emptyList()
 
             val allPromises = inProgress + upcoming
 
@@ -86,7 +100,8 @@ class MainViewModel(
 
     fun completePromise(
         promiseId: Long,
-        onSuccess: () -> Unit = {}
+        onSuccess: () -> Unit = {},
+        onFailure: () -> Unit = {}
     ) {
         viewModelScope.launch {
             runCatching {
@@ -94,6 +109,25 @@ class MainViewModel(
             }.onSuccess {
                 load()
                 onSuccess()
+            }.onFailure {
+                onFailure()
+            }
+        }
+    }
+
+    fun cancelPromise(
+        promiseId: Long,
+        onSuccess: () -> Unit = {},
+        onFailure: () -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            runCatching {
+                repo.cancelPromise(promiseId)
+            }.onSuccess {
+                load()
+                onSuccess()
+            }.onFailure {
+                onFailure()
             }
         }
     }

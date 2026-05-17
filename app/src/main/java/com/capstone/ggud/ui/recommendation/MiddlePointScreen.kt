@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -151,10 +153,9 @@ fun MiddlePointScreen(
             )
 
             TopOverlayBar(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth(),
-                navController = navController
+                navController = navController,
+                promiseId = promiseId,
+                onHomeClick = { navController.navigate("home") }
             )
 
             if (uiState.status == "RECRUITING") {
@@ -180,12 +181,51 @@ fun MiddlePointScreen(
 }
 
 @Composable
-private fun TopOverlayBar(
-    modifier: Modifier = Modifier,
-    navController: NavHostController
+fun TopOverlayBar(
+    navController: NavHostController,
+    promiseId: Long,
+    onHomeClick: () -> Unit
 ) {
-    Box(modifier = modifier) {
-        TopBar(navController, "중간지점 결과")
+    Column {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .size(375.dp, 69.dp)
+            .background(Color.White)
+            .padding(24.dp, 17.dp)
+            .zIndex(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image( //뒤로가기 버튼
+                painter = painterResource(R.drawable.btn_back),
+                contentDescription = "뒤로가기",
+                modifier = Modifier
+                    .padding(start = (7.7).dp)
+                    .size(21.dp, 20.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        navController.navigate("waiting/$promiseId")
+                    }
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "중간지점 결과",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF111827)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(R.drawable.btn_home),
+                contentDescription = "메인으로",
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) { onHomeClick() }
+            )
+        }
+        Divider(thickness = 1.dp, color = Color(0xFFE5E7EB))
     }
 }
 

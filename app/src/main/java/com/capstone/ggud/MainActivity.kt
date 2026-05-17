@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
                             MiddlePointScreen(navController = navController, promiseId = promiseId)
                         }
                         composable(
-                            route = "recommend_place/{promiseId}/{stationName}",
+                            "recommend_place/{promiseId}/{stationName}",
                             arguments = listOf(
                                 navArgument("promiseId") { type = NavType.LongType },
                                 navArgument("stationName") { type = NavType.StringType }

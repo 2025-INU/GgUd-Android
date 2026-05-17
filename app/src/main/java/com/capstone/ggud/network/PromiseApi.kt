@@ -138,6 +138,11 @@ interface PromiseApi {
         @Path("promiseId") promiseId: Long
     ): Response<Unit>
 
+    @PATCH("/api/v1/promises/{promiseId}/cancel")
+    suspend fun cancelPromise(
+        @Path("promiseId") promiseId: Long
+    ): Response<Unit>
+
     @GET("/api/v1/promises/{promiseId}/expenses")
     suspend fun getExpenses(
         @Path("promiseId") promiseId: Long

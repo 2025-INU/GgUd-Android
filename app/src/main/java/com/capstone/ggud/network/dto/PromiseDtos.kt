@@ -23,6 +23,7 @@ data class PromiseResponse(
     val confirmedLatitude: Double?,
     val confirmedLongitude: Double?,
     val confirmedPlaceName: String?,
+    val midpointStationName: String?,
     val createdAt: String?,
     val participants: List<ParticipantResponse>
 )
