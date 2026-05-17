@@ -58,6 +58,16 @@ class PromiseRepository(
         return api.getPromiseSummary(promiseId)
     }
 
+    suspend fun getPromiseStatus(promiseId: Long): Result<String> {
+        return runCatching {
+            api.getPromiseStatus(promiseId)
+                .string()
+                .trim()
+                .replace("\"", "")
+                .trim()
+        }
+    }
+
     suspend fun updateDeparture(
         promiseId: Long,
         latitude: Double,

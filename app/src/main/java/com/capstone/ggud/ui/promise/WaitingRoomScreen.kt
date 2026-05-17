@@ -113,6 +113,12 @@ fun WaitingRoomScreen(
     val titleText = uiState.summary?.title ?: "약속 이름"
     val dateText = uiState.summary?.promiseDateTime?.let { formatIsoToDotTime(it) } ?: "-"
 
+    val myParticipant = uiState.participants.firstOrNull {
+        it.userId == uiState.myUserId
+    }
+
+    val isHost = myParticipant?.host == true
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -284,7 +290,11 @@ fun WaitingRoomScreen(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) {
-                                vm.startMidpointSelection(promiseId)
+                                if (isHost) {
+                                    vm.startMidpointSelection(promiseId)
+                                } else {
+                                    navController.navigate("middle_point/$promiseId")
+                                }
                             }
                     ) {
                         Text(
@@ -296,6 +306,15 @@ fun WaitingRoomScreen(
                         )
                     }
                 }
+
+                Text(
+                    text = "최종 확정은 호스트만 가능해요.",
+                    fontSize = 14.sp,
+                    color = Color(0xFF6B7280),
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
             }
             Spacer(modifier = Modifier.height(24.dp))
         }

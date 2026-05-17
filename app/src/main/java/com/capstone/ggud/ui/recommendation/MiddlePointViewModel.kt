@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.capstone.ggud.data.PromiseRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,6 +13,8 @@ import kotlinx.coroutines.launch
 data class MiddlePointUiState(
     val isLoading: Boolean = false,
     val items: List<MiddlePointCardUi> = emptyList(),
+    val isHost: Boolean = false,
+    val status: String? = null,
     val error: String? = null
 )
 
@@ -24,7 +27,41 @@ class MiddlePointViewModel(
     val uiState: StateFlow<MiddlePointUiState> = _uiState.asStateFlow()
 
     init {
-        loadMidpointRecommendations()
+        watchPromiseStatus()
+    }
+
+    private fun watchPromiseStatus() {
+        viewModelScope.launch {
+            while (true) {
+                repo.getPromiseStatus(promiseId)
+                    .onSuccess { rawStatus ->
+                        val status = rawStatus
+                            .trim()
+                            .replace("\"", "")
+                            .trim()
+
+                        android.util.Log.d("MiddlePointVM", "raw=[$rawStatus], status=[$status]")
+
+                        _uiState.value = _uiState.value.copy(
+                            status = status,
+                            isLoading = status == "SELECTING_MIDPOINT"
+                        )
+
+                        if (status == "SELECTING_MIDPOINT") {
+                            loadMidpointRecommendations()
+                            return@launch
+                        }
+                    }
+                    .onFailure {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = it.message
+                        )
+                    }
+
+                delay(3000)
+            }
+        }
     }
 
     fun confirmMidpoint(
@@ -61,6 +98,8 @@ class MiddlePointViewModel(
                 _uiState.value = MiddlePointUiState(
                     isLoading = false,
                     items = mappedItems,
+                    isHost = response.host,
+                    status = "SELECTING_MIDPOINT",
                     error = null
                 )
             }.onFailure { throwable ->

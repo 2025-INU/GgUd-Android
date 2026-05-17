@@ -118,16 +118,22 @@ fun MiddlePointScreen(
                     selectedItem = item
                 },
                 onClickRecommend = { item ->
-                    vm.confirmMidpoint(
-                        stationId = item.stationId,
-                        onSuccess = {
-                            navController.navigate(
-                                "recommend_place/$promiseId/${Uri.encode(item.title)}"
-                            )
-                        },
-                        onError = {
-                        }
-                    )
+                    if (uiState.isHost) {
+                        vm.confirmMidpoint(
+                            stationId = item.stationId,
+                            onSuccess = {
+                                navController.navigate(
+                                    "recommend_place/$promiseId/${Uri.encode(item.title)}"
+                                )
+                            },
+                            onError = {
+                            }
+                        )
+                    } else {
+                        navController.navigate(
+                            "recommend_place/$promiseId/${Uri.encode(item.title)}"
+                        )
+                    }
                 }
             )
         }
@@ -151,7 +157,15 @@ fun MiddlePointScreen(
                 navController = navController
             )
 
-            if (showGuideBanner) {
+            if (uiState.status == "RECRUITING") {
+                WaitingHostBanner(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 90.dp)
+                        .width(327.dp)
+                        .wrapContentHeight()
+                )
+            } else if (showGuideBanner && uiState.status == "SELECTING_MIDPOINT") {
                 GuideBanner(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -172,6 +186,39 @@ private fun TopOverlayBar(
 ) {
     Box(modifier = modifier) {
         TopBar(navController, "중간지점 결과")
+    }
+}
+
+@Composable
+private fun WaitingHostBanner(
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 6.dp,
+        color = Color.White
+    ) {
+        Column(
+            modifier = Modifier.padding(17.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "호스트가 아직 대기방에 있어요",
+                fontSize = 18.sp,
+                fontWeight = Bold,
+                color = pBlack
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "호스트가 중간지점 선택 단계로 넘어가면 결과가 자동으로 표시돼요",
+                fontSize = 14.sp,
+                color = Color(0xFF4B5563),
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
