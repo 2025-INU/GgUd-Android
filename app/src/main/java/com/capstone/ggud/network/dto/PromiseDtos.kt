@@ -23,18 +23,19 @@ data class PromiseResponse(
     val confirmedLatitude: Double?,
     val confirmedLongitude: Double?,
     val confirmedPlaceName: String?,
-    val createdAt: String?
+    val createdAt: String?,
+    val participants: List<ParticipantResponse>
 )
 
 enum class PromiseStatus {
     CREATED,
     RECRUITING,
-    WAITING_LOCATIONS,
     SELECTING_MIDPOINT,
     MIDPOINT_CONFIRMED,
     PLACE_CONFIRMED,
     IN_PROGRESS,
-    COMPLETED
+    COMPLETED,
+    CANCELED
 }
 
 //GET /api/v1/promises

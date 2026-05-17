@@ -39,6 +39,11 @@ interface PromiseApi {
         @Query("size") size: Int = 20
     ): PagePromiseResponse
 
+    @GET("/api/v1/promises/{promiseId}")
+    suspend fun getPromise(
+        @Path("promiseId") promiseId: Long
+    ): PromiseResponse
+
     @GET("/api/v1/promises/{promiseId}/participants")
     suspend fun getPromiseParticipants(
         @Path("promiseId") promiseId: Long

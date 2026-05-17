@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.capstone.ggud.R
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
@@ -208,6 +210,7 @@ fun CalculateScreen(
                             expense.paidAmount.toString()
                         },
                         enabled = isEditable,
+                        profileImageUrl = expense.profileImageUrl,
                         onValueChange = { newText ->
                             vm.changeAmount(newText)
                         }
@@ -247,7 +250,8 @@ fun CalculateScreen(
                             name = displayName,
                             value = formatWon(abs(diff)),
                             isReceiver = isReceiver, //색/문구 바꾸기 위해 추가 파라미터
-                            roleText = roleText //"받을 사람/보낼 사람" 텍스트
+                            roleText = roleText, //"받을 사람/보낼 사람" 텍스트
+                            profileImageUrl = expense.profileImageUrl
                         )
                     }
                 }
@@ -312,6 +316,7 @@ fun PayAmountCard(
     roleText: String,
     value: String,
     enabled: Boolean,
+    profileImageUrl: String?,
     onValueChange: (String) -> Unit
 ) {
     Row(
@@ -323,11 +328,7 @@ fun PayAmountCard(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(R.drawable.ic_promise_profile),
-            contentDescription = null,
-            modifier = Modifier.size(40.dp)
-        )
+        ProfileImage(profileImageUrl = profileImageUrl)
         Spacer(modifier = Modifier.width(12.dp))
 
         Column {
@@ -407,7 +408,8 @@ fun ResultCard(
     name: String,
     value: String,
     isReceiver: Boolean, //true면 "받을 사람", false면 "보낼 사람"
-    roleText: String
+    roleText: String,
+    profileImageUrl: String?
 ) {
     val bgColor = if (isReceiver) Color(0xFFEFF6FF) else Color(0xFFFFF7ED)
     val borderColor = if (isReceiver) Color(0xFFBFDBFE) else Color(0xFFFED7AA)
@@ -424,11 +426,7 @@ fun ResultCard(
             .padding(17.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(R.drawable.ic_promise_profile),
-            contentDescription = null,
-            modifier = Modifier.size(40.dp)
-        )
+        ProfileImage(profileImageUrl = profileImageUrl)
         Spacer(modifier = Modifier.width(12.dp))
 
         Column {
@@ -455,33 +453,54 @@ fun RemittanceCard(
             .height(90.dp)
             .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
             .padding(17.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
+        Row(
+            modifier = Modifier.width(200.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = rename, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = pBlack)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "보내는 사람", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color(0xFF6B7280))
+            }
+            Image(
+                painter = painterResource(R.drawable.ic_send),
+                contentDescription = null
+            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = giname, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = pBlack)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "받는 사람", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color(0xFF6B7280))
+            }
+        }
+
+        //Spacer(modifier = Modifier.weight(1f))
+        Text(text = value, fontWeight = Bold, fontSize = 18.sp, color = Color(0xFF0284C7))
+    }
+}
+
+@Composable
+private fun ProfileImage(
+    profileImageUrl: String?,
+    modifier: Modifier = Modifier.size(40.dp)
+) {
+    if (profileImageUrl.isNullOrBlank()) {
         Image(
             painter = painterResource(R.drawable.ic_promise_profile),
             contentDescription = null,
-            modifier = Modifier.size(40.dp)
+            modifier = modifier.clip(CircleShape)
         )
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = rename, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = pBlack)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "보내는 사람", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color(0xFF6B7280))
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Image(
-            painter = painterResource(R.drawable.ic_send),
-            contentDescription = null
+    } else {
+        AsyncImage(
+            model = profileImageUrl,
+            contentDescription = null,
+            placeholder = painterResource(R.drawable.ic_promise_profile),
+            error = painterResource(R.drawable.ic_promise_profile),
+            contentScale = ContentScale.Crop,
+            modifier = modifier.clip(CircleShape)
         )
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = giname, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = pBlack)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "받는 사람", fontWeight = FontWeight.Medium, fontSize = 12.sp, color = Color(0xFF6B7280))
-        }
-        Spacer(modifier = Modifier.weight(1f))
-
-        Text(text = value, fontWeight = Bold, fontSize = 18.sp, color = Color(0xFF0284C7))
     }
 }

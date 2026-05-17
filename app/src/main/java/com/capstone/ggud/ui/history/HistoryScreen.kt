@@ -218,6 +218,7 @@ fun HistoryScreen(navController: NavHostController) {
                                 date = date,
                                 time = time,
                                 people = p.participantCount,
+                                profileImageUrls = uiState.profileImageUrlsByPromiseId[p.id].orEmpty(),
                                 spot = spot
                             )
                         }

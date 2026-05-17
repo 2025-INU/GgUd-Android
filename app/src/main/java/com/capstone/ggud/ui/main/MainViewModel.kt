@@ -6,17 +6,19 @@ import androidx.lifecycle.viewModelScope
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.dto.PromiseResponse
 import com.capstone.ggud.network.dto.PromiseStatus
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 data class MainUiState(
     val loading: Boolean = false,
     val inProgress: List<PromiseResponse> = emptyList(),
     val upcoming: List<PromiseResponse> = emptyList(),
+    val profileImageUrlsByPromiseId: Map<Long, List<String?>> = emptyMap(),
     val error: String? = null
 )
 
@@ -54,6 +56,21 @@ class MainViewModel(
             val inProgress = inProgressResult.getOrNull()?.content ?: emptyList()
             val upcoming = upcomingResult.getOrNull()?.content ?: emptyList()
 
+            val allPromises = inProgress + upcoming
+
+            val profileMap = allPromises.distinctBy { it.id }.map { promise ->
+                async {
+                    val detail = runCatching {
+                        repo.getPromise(promise.id)
+                    }.getOrNull()
+
+                    promise.id to detail
+                        ?.participants
+                        .orEmpty()
+                        .map { it.profileImageUrl }
+                }
+            }.awaitAll().toMap()
+
             val err = inProgressResult.exceptionOrNull()?.message
                 ?: upcomingResult.exceptionOrNull()?.message
 
@@ -61,6 +78,7 @@ class MainViewModel(
                 loading = false,
                 inProgress = inProgress,
                 upcoming = upcoming,
+                profileImageUrlsByPromiseId = profileMap,
                 error = err
             )
         }
