@@ -60,6 +60,7 @@ import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.ui.components.CardContent
+import com.capstone.ggud.ui.components.PromiseProfileStack
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -149,6 +150,7 @@ fun MainScreen(navController: NavHostController) {
                         date = MainViewModel.formatDate(p.promiseDateTime),
                         time = MainViewModel.formatTime(p.promiseDateTime),
                         people = p.participantCount,
+                        profileImageUrls = uiState.profileImageUrlsByPromiseId[p.id].orEmpty(),
                         spot = p.confirmedPlaceName ?: "장소 미정",
                         onClick = { navController.navigate("ongoing/${p.id}/${Uri.encode(p.title)}") },
                         onEndClick = {
@@ -172,6 +174,7 @@ fun MainScreen(navController: NavHostController) {
                         date = MainViewModel.formatDate(p.promiseDateTime),
                         time = MainViewModel.formatTime(p.promiseDateTime),
                         people = p.participantCount,
+                        profileImageUrls = uiState.profileImageUrlsByPromiseId[p.id].orEmpty(),
                         spot = p.confirmedPlaceName ?: "장소 미정"
                     )
                 }
@@ -405,6 +408,7 @@ fun InProgressCard(
     date: String,
     time: String,
     people: Int,
+    profileImageUrls: List<String?>,
     spot: String,
     onClick: () -> Unit,
     onEndClick: () -> Unit
@@ -448,7 +452,7 @@ fun InProgressCard(
         }
         Spacer(modifier = Modifier.height(28.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            PromiseProfileStack(people = people)
+            PromiseProfileStack(people = people, profileImageUrls = profileImageUrls)
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "$people"+"명",
@@ -484,6 +488,7 @@ fun ConfirmedCard(
     date: String,
     time: String,
     people: Int,
+    profileImageUrls: List<String?>,
     spot: String
 ){
     Column(
@@ -508,7 +513,7 @@ fun ConfirmedCard(
         }
         Spacer(modifier = Modifier.height(28.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            PromiseProfileStack(people = people)
+            PromiseProfileStack(people = people, profileImageUrls = profileImageUrls)
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "$people"+"명",
@@ -567,75 +572,4 @@ fun ConfirmedCard(
     }
 
     Spacer(modifier = Modifier.height(16.dp))
-}
-
-@Composable
-fun PromiseProfileStack(
-    people: Int,
-    modifier: Modifier = Modifier
-) {
-    val avatarSize = 32.dp
-    val overlapOffset = 22.dp
-
-    val visibleProfileCount = if (people > 4) 4 else people
-    val extraCount = people - visibleProfileCount
-
-    val totalCount = visibleProfileCount + if (extraCount > 0) 1 else 0
-    val stackWidth = if (totalCount <= 0) {
-        avatarSize
-    } else {
-        avatarSize + overlapOffset * (totalCount - 1)
-    }
-
-    Row(
-        modifier = modifier.width(stackWidth),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .width(stackWidth)
-                .height(avatarSize)
-        ) {
-            repeat(visibleProfileCount) { index ->
-                Image(
-                    painter = painterResource(R.drawable.ic_promise_profile),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(avatarSize)
-                        .offset(x = overlapOffset * index)
-                        .zIndex(index.toFloat())
-                        .clip(CircleShape)
-                        .border(
-                            width = 2.dp,
-                            color = Color.White,
-                            shape = CircleShape
-                        )
-                )
-            }
-
-            if (extraCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .size(avatarSize)
-                        .offset(x = overlapOffset * visibleProfileCount)
-                        .zIndex(visibleProfileCount.toFloat())
-                        .clip(CircleShape)
-                        .background(Color(0xFFD1D5DB))
-                        .border(
-                            width = 2.dp,
-                            color = Color.White,
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "+$extraCount",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF4B5563)
-                    )
-                }
-            }
-        }
-    }
 }

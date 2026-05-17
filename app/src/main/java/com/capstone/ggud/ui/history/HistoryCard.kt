@@ -1,6 +1,5 @@
 package com.capstone.ggud.ui.history
 
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.CardContent
+import com.capstone.ggud.ui.components.PromiseProfileStack
 
 @Composable
 fun HistoryCard(
@@ -38,6 +38,7 @@ fun HistoryCard(
     date: String,
     time: String,
     people: Int,
+    profileImageUrls: List<String?>,
     spot: String
 ) {
     Column(
@@ -81,7 +82,7 @@ fun HistoryCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween //남는 간격 자동분배
         ) {
-            Image(painter = painterResource(R.drawable.ic_people), contentDescription = null)
+            PromiseProfileStack(people = people, profileImageUrls = profileImageUrls)
             Text(
                 text = "$people" + "명 참여",
                 fontWeight = FontWeight.Medium,

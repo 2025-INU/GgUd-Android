@@ -46,6 +46,10 @@ class PromiseRepository(
         )
     }
 
+    suspend fun getPromise(promiseId: Long): PromiseResponse {
+        return api.getPromise(promiseId)
+    }
+
     suspend fun getPromiseParticipants(promiseId: Long): List<ParticipantResponse> {
         return api.getPromiseParticipants(promiseId)
     }

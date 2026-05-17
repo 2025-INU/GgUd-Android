@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.TopBar
 import com.capstone.ggud.ui.components.formatIsoToDotTime
@@ -55,8 +57,6 @@ import com.kakao.sdk.template.model.Link
 import com.kakao.sdk.template.model.TextTemplate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun WaitingRoomScreen(
@@ -246,6 +246,7 @@ fun WaitingRoomScreen(
                     name = nameText,
                     enterLocation = p.locationSubmitted,
                     isMe = isMe,
+                    profileImageUrl = p.profileImageUrl,
                     onClickEnterLocation = {
                         navController.navigate("promise_join/$promiseId")
                     }
@@ -306,6 +307,7 @@ fun PeopleCard(
     name: String,
     enterLocation: Boolean,
     isMe: Boolean,
+    profileImageUrl: String?,
     onClickEnterLocation: () -> Unit
 ) {
     Row(
@@ -324,11 +326,27 @@ fun PeopleCard(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Image(
-            painter = painterResource(R.drawable.ic_promise_profile),
-            contentDescription = null,
-            modifier = Modifier.size(48.dp)
-        )
+        if (profileImageUrl.isNullOrBlank()) {
+            Image(
+                painter = painterResource(R.drawable.ic_promise_profile),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(48.dp)
+            )
+        } else {
+            AsyncImage(
+                model = profileImageUrl,
+                contentDescription = null,
+                placeholder = painterResource(R.drawable.ic_promise_profile),
+                error = painterResource(R.drawable.ic_promise_profile),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(48.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.width(16.dp))
 

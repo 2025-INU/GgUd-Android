@@ -7,17 +7,19 @@ import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.dto.PromiseResponse
 import com.capstone.ggud.network.dto.PromiseStatus
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 data class HistoryUiState(
     val loading: Boolean = false,
     val items: List<PromiseResponse> = emptyList(),
+    val profileImageUrlsByPromiseId: Map<Long, List<String?>> = emptyMap(),
     val error: String? = null,
     val keyword: String = ""
 )
@@ -47,9 +49,23 @@ class HistoryViewModel(
                     size = 50
                 )
             }.onSuccess { page ->
+                val profileMap = page.content.map { promise ->
+                    async {
+                        val detail = runCatching {
+                            repo.getPromise(promise.id)
+                        }.getOrNull()
+
+                        promise.id to detail
+                            ?.participants
+                            .orEmpty()
+                            .map { it.profileImageUrl }
+                    }
+                }.awaitAll().toMap()
+
                 _uiState.value = _uiState.value.copy(
                     loading = false,
                     items = page.content,
+                    profileImageUrlsByPromiseId = profileMap,
                     error = null
                 )
             }.onFailure { e ->
