@@ -45,6 +45,17 @@ class OngoingPromiseViewModel(
 
     private var locationSocket: PromiseLocationSocket? = null
 
+    private data class CachedRouteData(
+        val destinationLat: Double?,
+        val destinationLon: Double?,
+        val destinationName: String,
+        val routeOptions: List<RouteOption>
+    )
+
+    companion object {
+        private val routeCache = mutableMapOf<Long, CachedRouteData>()
+    }
+
     init {
         loadArrivals()
     }
@@ -77,45 +88,52 @@ class OngoingPromiseViewModel(
 
         viewModelScope.launch {
             runCatching {
-
                 uiState = uiState.copy(
                     isLoading = true,
                     errorMessage = null
                 )
 
-                val mapData = repository.getMapData(
-                    promiseId = promiseId
-                )
-
+                val mapData = repository.getMapData(promiseId)
                 val destination = mapData.destination
+                val cachedRouteData = routeCache[promiseId]
 
-                val directions = if (destination != null) {
+                val routeOptions = if (cachedRouteData != null) {
+                    cachedRouteData.routeOptions
+                } else if (destination != null) {
                     repository.getDirections(
                         promiseId = promiseId,
                         originLat = originLat,
                         originLon = originLon,
                         destLat = destination.latitude,
                         destLon = destination.longitude
-                    )
-                } else null
+                    ).routeOptions.also { routeOptions ->
+                        routeCache[promiseId] = CachedRouteData(
+                            destinationLat = destination.latitude,
+                            destinationLon = destination.longitude,
+                            destinationName = destination.name,
+                            routeOptions = routeOptions
+                        )
+                    }
+                } else {
+                    emptyList()
+                }
 
                 uiState = uiState.copy(
                     isLoading = false,
-                    destinationLat = destination?.latitude,
-                    destinationLon = destination?.longitude,
-                    destinationName = destination?.name.orEmpty(),
-                    routeOptions = directions?.routeOptions ?: emptyList(),
-                    participantLocations =
-                        mapData.currentLocations.map { participant ->
-                            OngoingParticipantLocation(
-                                userId = participant.userId,
-                                nickname = participant.nickname,
-                                profileImageUrl = participant.profileImageUrl,
-                                latitude = participant.latitude,
-                                longitude = participant.longitude,
-                                isArrived = false
-                            )
-                        }
+                    destinationLat = cachedRouteData?.destinationLat ?: destination?.latitude,
+                    destinationLon = cachedRouteData?.destinationLon ?: destination?.longitude,
+                    destinationName = cachedRouteData?.destinationName ?: destination?.name.orEmpty(),
+                    routeOptions = routeOptions,
+                    participantLocations = mapData.currentLocations.map { participant ->
+                        OngoingParticipantLocation(
+                            userId = participant.userId,
+                            nickname = participant.nickname,
+                            profileImageUrl = participant.profileImageUrl,
+                            latitude = participant.latitude,
+                            longitude = participant.longitude,
+                            isArrived = false
+                        )
+                    }
                 )
             }.onFailure { throwable ->
                 hasLoaded = false
