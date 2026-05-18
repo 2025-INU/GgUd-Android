@@ -87,6 +87,7 @@ fun MainScreen(
 
     var promise by remember { mutableStateOf(true) }
     val focusedCardRequester = remember { BringIntoViewRequester() }
+    var focusTargetId by remember(focusPromiseId) { mutableStateOf(focusPromiseId) }
 
     var showPromiseDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
@@ -99,12 +100,14 @@ fun MainScreen(
     val density = LocalDensity.current
 
     LaunchedEffect(
-        focusPromiseId,
+        focusTargetId,
         uiState.loading,
         uiState.upcoming
     ) {
-        if (focusPromiseId != null && !uiState.loading) {
-            val existsInUpcoming = uiState.upcoming.any { it.id == focusPromiseId }
+        val targetId = focusTargetId ?: return@LaunchedEffect
+
+        if (!uiState.loading) {
+            val existsInUpcoming = uiState.upcoming.any { it.id == targetId }
 
             if (existsInUpcoming) {
                 promise = false
@@ -116,6 +119,8 @@ fun MainScreen(
                 scrollState.animateScrollTo(
                     (scrollState.value + extraScroll).coerceAtMost(scrollState.maxValue)
                 )
+
+                focusTargetId = null
             }
         }
     }
@@ -170,6 +175,7 @@ fun MainScreen(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
+                    focusTargetId = null
                     promise = !promise
                     vm.load()
                 }
@@ -214,7 +220,7 @@ fun MainScreen(
             } else {
                 list.forEach { p ->
                     val focusModifier =
-                        if (p.id == focusPromiseId) {
+                        if (p.id == focusTargetId) {
                             Modifier.bringIntoViewRequester(focusedCardRequester)
                         } else {
                             Modifier
