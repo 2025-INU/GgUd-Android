@@ -73,7 +73,18 @@ class PromiseViewModel(
         val hour = uiState.selectedHour ?: return
         val minute = uiState.selecteMinute ?: return
 
-        val iso = buildLocalDateTimeString(dateMillis, hour, minute)
+        val selectedDateTime = buildLocalDateTime(dateMillis, hour, minute)
+
+        if (selectedDateTime.isBefore(LocalDateTime.now().plusHours(1))) {
+            uiState = uiState.copy(
+                errorMessage = "약속 시간은 현재 시간보다 최소 1시간 이후여야 합니다."
+            )
+            return
+        }
+
+        val iso = selectedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
+
+        uiState = uiState.copy(isLoading = true, errorMessage = null)
 
         viewModelScope.launch {
             runCatching {
@@ -92,16 +103,14 @@ class PromiseViewModel(
         }
     }
 
-    private fun buildLocalDateTimeString(dateMillis: Long, hour: Int, minute: Int): String {
+    private fun buildLocalDateTime(dateMillis: Long, hour: Int, minute: Int): LocalDateTime {
         val zone = ZoneId.systemDefault()
         val localDate = Instant.ofEpochMilli(dateMillis).atZone(zone).toLocalDate()
 
-        val ldt = LocalDateTime.of(
+        return LocalDateTime.of(
             localDate,
             LocalTime.of(hour, minute)
         )
-
-        return ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))
     }
 }
 

@@ -1,5 +1,6 @@
 package com.capstone.ggud.ui.promise
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -196,6 +197,12 @@ fun PromiseScreen(navController: NavHostController) {
 
     val isFormValid by remember(state) {
         derivedStateOf { state.isFormValid && !state.isLoading }
+    }
+
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
     }
 
     Box( //화면
