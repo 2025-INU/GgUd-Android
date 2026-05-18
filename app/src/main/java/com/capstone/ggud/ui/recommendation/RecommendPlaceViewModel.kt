@@ -23,7 +23,8 @@ data class RecommendPlaceUiState(
     val selectedPlaceIds: Set<String> = emptySet(),
     val confirmSuccess: Boolean = false,
     val isHost: Boolean = false,
-    val status: String? = null
+    val status: String? = null,
+    val placeConfirmed: Boolean = false
 )
 
 class RecommendPlaceViewModel(
@@ -40,6 +41,8 @@ class RecommendPlaceViewModel(
 
     private fun watchPromiseStatus() {
         viewModelScope.launch {
+            var didLoadRecommendations = false
+
             while (true) {
                 repository.getPromiseStatus(promiseId)
                     .onSuccess { rawStatus ->
@@ -50,12 +53,24 @@ class RecommendPlaceViewModel(
                         _uiState.update {
                             it.copy(
                                 status = status,
-                                isLoading = status == "MIDPOINT_CONFIRMED"
+                                isLoading = status == "MIDPOINT_CONFIRMED" && !didLoadRecommendations,
+                                placeConfirmed = status == "PLACE_CONFIRMED"
                             )
                         }
 
-                        if (status == "MIDPOINT_CONFIRMED") {
+                        if (status == "MIDPOINT_CONFIRMED" && !didLoadRecommendations) {
+                            didLoadRecommendations = true
                             loadPlaceRecommendations()
+                        }
+
+                        if (status == "PLACE_CONFIRMED" || status == "IN_PROGRESS") {
+                            _uiState.update {
+                                it.copy(
+                                    status = status,
+                                    placeConfirmed = status == "PLACE_CONFIRMED",
+                                    isLoading = false
+                                )
+                            }
                             return@launch
                         }
                     }

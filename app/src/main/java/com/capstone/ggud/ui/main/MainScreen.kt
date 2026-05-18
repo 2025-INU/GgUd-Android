@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
@@ -63,10 +67,14 @@ import com.capstone.ggud.ui.components.CardContent
 import com.capstone.ggud.ui.components.PromiseProfileStack
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun MainScreen(navController: NavHostController) {
+fun MainScreen(
+    navController: NavHostController,
+    focusPromiseId: Long? = null
+) {
     val context = LocalContext.current
 
     val api = remember { ApiClient.getPromiseApi(context) }
@@ -78,6 +86,7 @@ fun MainScreen(navController: NavHostController) {
     val uiState by vm.uiState.collectAsState()
 
     var promise by remember { mutableStateOf(true) }
+    val focusedCardRequester = remember { BringIntoViewRequester() }
 
     var showPromiseDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
@@ -85,6 +94,31 @@ fun MainScreen(navController: NavHostController) {
 
     val bottomBarHeight = 91.dp
     val fabGap = 80.dp
+
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+
+    LaunchedEffect(
+        focusPromiseId,
+        uiState.loading,
+        uiState.upcoming
+    ) {
+        if (focusPromiseId != null && !uiState.loading) {
+            val existsInUpcoming = uiState.upcoming.any { it.id == focusPromiseId }
+
+            if (existsInUpcoming) {
+                promise = false
+                delay(300)
+
+                focusedCardRequester.bringIntoView()
+
+                val extraScroll = with(density) { 350.dp.roundToPx() }
+                scrollState.animateScrollTo(
+                    (scrollState.value + extraScroll).coerceAtMost(scrollState.maxValue)
+                )
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         //상단바
@@ -121,7 +155,7 @@ fun MainScreen(navController: NavHostController) {
                 .fillMaxSize()
                 .padding(top = 76.dp)
                 .background(Color.White)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp)
                 .padding(bottom = bottomBarHeight + fabGap),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -179,11 +213,19 @@ fun MainScreen(navController: NavHostController) {
                 }
             } else {
                 list.forEach { p ->
+                    val focusModifier =
+                        if (p.id == focusPromiseId) {
+                            Modifier.bringIntoViewRequester(focusedCardRequester)
+                        } else {
+                            Modifier
+                        }
+
                     when (p.status) {
                         PromiseStatus.RECRUITING,
                         PromiseStatus.SELECTING_MIDPOINT,
                         PromiseStatus.MIDPOINT_CONFIRMED -> {
                             SimpleUpcomingCard(
+                                modifier = focusModifier,
                                 name = p.title,
                                 date = MainViewModel.formatDate(p.promiseDateTime),
                                 time = MainViewModel.formatTime(p.promiseDateTime),
@@ -219,6 +261,7 @@ fun MainScreen(navController: NavHostController) {
 
                         PromiseStatus.PLACE_CONFIRMED -> {
                             ConfirmedCard(
+                                modifier = focusModifier,
                                 name = p.title,
                                 date = MainViewModel.formatDate(p.promiseDateTime),
                                 time = MainViewModel.formatTime(p.promiseDateTime),
@@ -556,6 +599,7 @@ fun InProgressCard(
 //예정된 약속 카드
 @Composable
 fun ConfirmedCard(
+    modifier: Modifier = Modifier,
     name: String,
     date: String,
     time: String,
@@ -565,7 +609,7 @@ fun ConfirmedCard(
     onCancelClick: () -> Unit
 ){
     Column(
-        modifier = Modifier
+        modifier = modifier
             .width(327.dp)
             .wrapContentHeight()
             .heightIn(min = 305.dp)
@@ -662,6 +706,7 @@ fun ConfirmedCard(
 
 @Composable
 fun SimpleUpcomingCard(
+    modifier: Modifier = Modifier,
     name: String,
     date: String,
     time: String,
@@ -669,7 +714,7 @@ fun SimpleUpcomingCard(
     onCancelClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .width(327.dp)
             .wrapContentHeight()
             .heightIn(min = 150.dp)

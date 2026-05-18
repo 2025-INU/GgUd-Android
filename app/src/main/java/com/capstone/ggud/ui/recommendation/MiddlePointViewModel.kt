@@ -32,6 +32,8 @@ class MiddlePointViewModel(
 
     private fun watchPromiseStatus() {
         viewModelScope.launch {
+            var didLoadRecommendations = false
+
             while (true) {
                 repo.getPromiseStatus(promiseId)
                     .onSuccess { rawStatus ->
@@ -40,16 +42,14 @@ class MiddlePointViewModel(
                             .replace("\"", "")
                             .trim()
 
-                        android.util.Log.d("MiddlePointVM", "raw=[$rawStatus], status=[$status]")
-
                         _uiState.value = _uiState.value.copy(
                             status = status,
-                            isLoading = status == "SELECTING_MIDPOINT"
+                            isLoading = status == "SELECTING_MIDPOINT" && !didLoadRecommendations
                         )
 
-                        if (status == "SELECTING_MIDPOINT") {
+                        if (status == "SELECTING_MIDPOINT" && !didLoadRecommendations) {
+                            didLoadRecommendations = true
                             loadMidpointRecommendations()
-                            return@launch
                         }
                     }
                     .onFailure {
@@ -99,7 +99,7 @@ class MiddlePointViewModel(
                     isLoading = false,
                     items = mappedItems,
                     isHost = response.host,
-                    status = "SELECTING_MIDPOINT",
+                    status = _uiState.value.status,
                     error = null
                 )
             }.onFailure { throwable ->

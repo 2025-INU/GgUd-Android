@@ -53,6 +53,17 @@ class MainActivity : ComponentActivity() {
 
                         composable("home") { MainScreen(navController = navController) }
                         composable(
+                            route = "home/{promiseId}",
+                            arguments = listOf(navArgument("promiseId") { type = NavType.LongType })
+                        ) { backStackEntry ->
+                            val promiseId = backStackEntry.arguments?.getLong("promiseId")
+
+                            MainScreen(
+                                navController = navController,
+                                focusPromiseId = promiseId
+                            )
+                        }
+                        composable(
                             route = "ongoing/{promiseId}/{promiseTitle}"
                         ) { backStackEntry ->
 

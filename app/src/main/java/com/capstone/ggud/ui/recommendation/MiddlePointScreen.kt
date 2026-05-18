@@ -102,6 +102,15 @@ fun MiddlePointScreen(
 
     val scaffoldState = rememberBottomSheetScaffoldState()
 
+    LaunchedEffect(
+        uiState.isHost,
+        uiState.status
+    ) {
+        if (!uiState.isHost && uiState.status == "MIDPOINT_CONFIRMED") {
+            navController.navigate("recommend_place/$promiseId/${Uri.encode("연결전")}") { launchSingleTop = true }
+        }
+    }
+
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = peekHeight,
@@ -116,26 +125,21 @@ fun MiddlePointScreen(
                     .navigationBarsPadding(),
                 items = uiState.items,
                 selectedItem = selectedItem,
+                isHost = uiState.isHost,
                 onSelectItem = { item ->
                     selectedItem = item
                 },
                 onClickRecommend = { item ->
-                    if (uiState.isHost) {
-                        vm.confirmMidpoint(
-                            stationId = item.stationId,
-                            onSuccess = {
-                                navController.navigate(
-                                    "recommend_place/$promiseId/${Uri.encode(item.title)}"
-                                )
-                            },
-                            onError = {
-                            }
-                        )
-                    } else {
-                        navController.navigate(
-                            "recommend_place/$promiseId/${Uri.encode(item.title)}"
-                        )
-                    }
+                    vm.confirmMidpoint(
+                        stationId = item.stationId,
+                        onSuccess = {
+                            navController.navigate(
+                                "recommend_place/$promiseId/${Uri.encode(item.title)}"
+                            )
+                        },
+                        onError = {
+                        }
+                    )
                 }
             )
         }
@@ -153,9 +157,14 @@ fun MiddlePointScreen(
             )
 
             TopOverlayBar(
-                navController = navController,
-                promiseId = promiseId,
-                onHomeClick = { navController.navigate("home") }
+                onHomeClick = {
+                    navController.navigate("home/$promiseId") {
+                        popUpTo("home") {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
             )
 
             if (uiState.status == "RECRUITING") {
@@ -182,8 +191,6 @@ fun MiddlePointScreen(
 
 @Composable
 fun TopOverlayBar(
-    navController: NavHostController,
-    promiseId: Long,
     onHomeClick: () -> Unit
 ) {
     Column {
@@ -195,19 +202,6 @@ fun TopOverlayBar(
             .zIndex(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image( //뒤로가기 버튼
-                painter = painterResource(R.drawable.btn_back),
-                contentDescription = "뒤로가기",
-                modifier = Modifier
-                    .padding(start = (7.7).dp)
-                    .size(21.dp, 20.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        navController.navigate("waiting/$promiseId")
-                    }
-            )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = "중간지점 결과",
@@ -300,6 +294,7 @@ private fun BottomSheetContent(
     modifier: Modifier = Modifier,
     items: List<MiddlePointCardUi>,
     selectedItem: MiddlePointCardUi?,
+    isHost: Boolean,
     onSelectItem: (MiddlePointCardUi) -> Unit,
     onClickRecommend: (MiddlePointCardUi) -> Unit
 ) {
@@ -337,6 +332,7 @@ private fun BottomSheetContent(
                 MiddlePointCard(
                     item = item,
                     isSelected = selectedItem?.stationId == item.stationId,
+                    isHost = isHost,
                     onCardClick = { onSelectItem(item) },
                     onRecommendClick = {
                         onSelectItem(item)
@@ -354,6 +350,7 @@ private fun BottomSheetContent(
 private fun MiddlePointCard(
     item: MiddlePointCardUi,
     isSelected: Boolean,
+    isHost: Boolean,
     onCardClick: () -> Unit,
     onRecommendClick: () -> Unit
 ) {
@@ -405,16 +402,18 @@ private fun MiddlePointCard(
                     )
                 }
             }
-            Image(
-                painter = painterResource(R.drawable.btn_recommend),
-                contentDescription = "추천장소로 이동",
-                modifier = Modifier
-                    .size(43.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { onRecommendClick() }
-            )
+            if (isHost) {
+                Image(
+                    painter = painterResource(R.drawable.btn_recommend),
+                    contentDescription = "추천장소로 이동",
+                    modifier = Modifier
+                        .size(43.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onRecommendClick() }
+                )
+            }
         }
     }
 }
