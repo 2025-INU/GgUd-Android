@@ -10,15 +10,21 @@ class AuthRepository(
     private val tokenStore: TokenStore
 ) {
 
-    suspend fun loginWithKakaoSdk(kakaoAccessToken: String): LoginResponse {
+    suspend fun loginWithKakaoSdk(
+        kakaoAccessToken: String,
+        kakaoRefreshToken: String
+    ): LoginResponse {
         val res = api.login(
-            KakaoSdkLoginRequest(kakaoAccessToken = kakaoAccessToken)
+            KakaoSdkLoginRequest(
+                kakaoAccessToken = kakaoAccessToken,
+                kakaoRefreshToken = kakaoRefreshToken
+            )
         )
         tokenStore.saveLogin(res)
         return res
     }
 
-    suspend fun refreshIfNeedded(thresholdMs: Long = 60_000L): String? {
+    suspend fun refreshIfNeeded(thresholdMs: Long = 60_000L): String? {
         val currentAccess = tokenStore.getAccessToken()
         val expiresAt = tokenStore.getExpiresAt()
 

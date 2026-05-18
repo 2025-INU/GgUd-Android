@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.capstone.ggud.data.AuthRepository
 import com.capstone.ggud.data.UserRepository
 import com.capstone.ggud.network.dto.UserResponse
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,17 +26,18 @@ data class UserUiState(
     val selectedImageUri: Uri? = null,
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
+    val isLoggingOut: Boolean = false,
+    val logoutSuccess: Boolean = false,
     val error: String? = null
 )
 
 class MyViewModel(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(UserUiState())
     val uiState: StateFlow<UserUiState> = _uiState.asStateFlow()
-
-    init { getMyPage() }
 
     fun getMyPage() {
         viewModelScope.launch {
@@ -166,6 +168,31 @@ class MyViewModel(
         )
     }
 
+    fun logout() {
+        if (_uiState.value.isLoggingOut) return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoggingOut = true,
+                error = null
+            )
+
+            runCatching {
+                authRepository.logout()
+            }.onSuccess {
+                _uiState.value = _uiState.value.copy(
+                    isLoggingOut = false,
+                    logoutSuccess = true
+                )
+            }.onFailure { throwable ->
+                _uiState.value = _uiState.value.copy(
+                    isLoggingOut = false,
+                    error = throwable.message ?: "로그아웃 실패"
+                )
+            }
+        }
+    }
+
     fun clearErrorMessage() {
         _uiState.value = _uiState.value.copy(
             error = null
@@ -174,13 +201,14 @@ class MyViewModel(
 }
 
 class MyViewModelFactory(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val authRepository: AuthRepository
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MyViewModel::class.java)) {
-            return MyViewModel(userRepository) as T
+            return MyViewModel(userRepository, authRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

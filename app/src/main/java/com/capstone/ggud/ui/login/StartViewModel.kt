@@ -36,7 +36,7 @@ class StartViewModel(
         viewModelScope.launch {
             runCatching {
                 //토큰 만료 임박이면 refresh, 아니면 기존 accessToken으로
-                val access = authRepo.refreshIfNeedded()
+                val access = authRepo.refreshIfNeeded()
                 if (!access.isNullOrBlank()) { //accessToken 있으면 홈으로
                     _uiState.value = StartUiState(loading = false, next = StartRoute.ToHome)
                 } else { //없으면 로그인으로

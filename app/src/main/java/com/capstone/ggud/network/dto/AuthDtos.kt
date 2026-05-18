@@ -12,8 +12,10 @@ data class TokenRefreshResponse(
 
 //POST /api/v1/auth/kakao/login
 data class KakaoSdkLoginRequest(
-    val kakaoAccessToken: String
+    val kakaoAccessToken: String,
+    val kakaoRefreshToken: String
 )
+
 data class LoginResponse(
     val accessToken: String,
     val refreshToken: String? = null,

@@ -46,6 +46,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.capstone.ggud.R
+import com.capstone.ggud.data.AuthRepository
+import com.capstone.ggud.data.TokenStore
 import com.capstone.ggud.data.UserRepository
 import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.TopBar
@@ -56,32 +58,37 @@ fun ProfileEditScreen(navController: NavHostController) {
     val context = LocalContext.current
 
     val userApi = remember { ApiClient.getUserApi(context) }
+    val authApi = remember { ApiClient.getAuthApi(context) }
+    val tokenStore = remember { TokenStore(context.applicationContext) }
+
     val userRepository = remember { UserRepository(userApi) }
-    val viewModel: MyViewModel = viewModel(
-        factory = MyViewModelFactory(userRepository)
+    val authRepository = remember { AuthRepository(authApi, tokenStore) }
+
+    val vm: MyViewModel = viewModel(
+        factory = MyViewModelFactory(userRepository, authRepository)
     )
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by vm.uiState.collectAsState()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            viewModel.onProfileImageSelected(uri)
+            vm.onProfileImageSelected(uri)
         }
     }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            viewModel.clearErrorMessage()
+            vm.clearErrorMessage()
         }
     }
 
     LaunchedEffect(uiState.saveSuccess) {
         if (uiState.saveSuccess) {
             Toast.makeText(context, "프로필이 수정되었습니다", Toast.LENGTH_SHORT).show()
-            viewModel.clearSaveSuccess()
+            vm.clearSaveSuccess()
             navController.popBackStack()
         }
     }
@@ -221,7 +228,7 @@ fun ProfileEditScreen(navController: NavHostController) {
             ) {
                 BasicTextField(
                     value = uiState.nicknameInput,
-                    onValueChange = { viewModel.onNicknameChanged(it) },
+                    onValueChange = { vm.onNicknameChanged(it) },
                     singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(
                         fontSize = 14.sp,
@@ -253,7 +260,7 @@ fun ProfileEditScreen(navController: NavHostController) {
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    viewModel.updateMyProfile(context)
+                    vm.updateMyProfile(context)
                 }
         )
 

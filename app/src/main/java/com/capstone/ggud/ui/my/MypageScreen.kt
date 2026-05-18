@@ -43,6 +43,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.capstone.ggud.R
+import com.capstone.ggud.data.AuthRepository
+import com.capstone.ggud.data.TokenStore
 import com.capstone.ggud.data.UserRepository
 import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.Section
@@ -53,16 +55,30 @@ fun MypageScreen(navController: NavHostController) {
     val context = LocalContext.current
 
     val userApi = remember { ApiClient.getUserApi(context) }
+    val authApi = remember { ApiClient.getAuthApi(context) }
+    val tokenStore = remember { TokenStore(context.applicationContext) }
+
     val userRepository = remember { UserRepository(userApi) }
-    val viewModel: MyViewModel = viewModel(
-        factory = MyViewModelFactory(userRepository)
+    val authRepository = remember { AuthRepository(authApi, tokenStore) }
+
+    val vm: MyViewModel = viewModel(
+        factory = MyViewModelFactory(userRepository, authRepository)
     )
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by vm.uiState.collectAsState()
     val bottomBarHeight = 91.dp
 
     LaunchedEffect(Unit) {
-        viewModel.getMyPage()
+        vm.getMyPage()
+    }
+
+    LaunchedEffect(uiState.logoutSuccess) {
+        if (uiState.logoutSuccess) {
+            navController.navigate("login") {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
     }
     
     Box(
@@ -141,7 +157,7 @@ fun MypageScreen(navController: NavHostController) {
                     Divider(thickness = 1.dp, color = Color(0xFFF9FAFB))
                     Content(R.drawable.ic_notify, "알림 설정", {navController.navigate("notify_setting")})
                     Divider(thickness = 1.dp, color = Color(0xFFF9FAFB))
-                    Content(R.drawable.ic_logout, "로그아웃")
+                    Content(R.drawable.ic_logout, "로그아웃") { vm.logout() }
                 }
             }
 

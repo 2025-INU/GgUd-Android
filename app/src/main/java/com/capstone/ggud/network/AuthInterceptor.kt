@@ -1,12 +1,12 @@
 package com.capstone.ggud.network
 
-import com.capstone.ggud.data.TokenStore
+import com.capstone.ggud.data.AuthRepository
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
 class AuthInterceptor(
-    private val tokenStore: TokenStore
+    private val authRepository: AuthRepository
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -19,7 +19,10 @@ class AuthInterceptor(
 
         if (skipAuth) return chain.proceed(original)
 
-        val accessToken = runBlocking { tokenStore.getAccessToken() }
+        val accessToken = runBlocking {
+            authRepository.refreshIfNeeded()
+        }
+
         val request = if (!accessToken.isNullOrBlank()) {
             original.newBuilder()
                 .addHeader("Authorization", "Bearer $accessToken")
