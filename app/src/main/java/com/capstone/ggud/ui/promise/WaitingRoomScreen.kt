@@ -128,7 +128,14 @@ fun WaitingRoomScreen(
     ) {
         WaitingTopBar(
             navController = navController,
-            onHomeClick = { navController.navigate("home") }
+            onHomeClick = {
+                navController.navigate("home/$promiseId") {
+                    popUpTo("home") {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
         )
 
         val scrollState = rememberScrollState()

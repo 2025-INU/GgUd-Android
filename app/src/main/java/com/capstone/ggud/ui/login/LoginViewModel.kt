@@ -46,7 +46,7 @@ class LoginViewModel(
 
             viewModelScope.launch {
                 runCatching {
-                    repo.loginWithKakaoSdk(token.accessToken)
+                    repo.loginWithKakaoSdk(token.accessToken, token.refreshToken)
                 }.onSuccess {
                     _uiState.value = LoginUiState(loading = false, success = true)
                 }.onFailure { t ->

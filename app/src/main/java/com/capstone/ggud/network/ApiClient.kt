@@ -1,6 +1,7 @@
 package com.capstone.ggud.network
 
 import android.content.Context
+import com.capstone.ggud.data.AuthRepository
 import com.capstone.ggud.data.TokenStore
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -22,10 +23,24 @@ object ApiClient {
 
     private var userApi: UserApi? = null
 
+    @Volatile
+    private var refreshRetrofit: Retrofit? = null
+
+    @Volatile
+    private var refreshAuthApi: AuthApi? = null
+
     fun getAuthApi(context: Context): AuthApi {
         return authApi ?: synchronized(this) {
             authApi ?: buildRetrofit(context).create(AuthApi::class.java).also {
                 authApi = it
+            }
+        }
+    }
+
+    private fun getRefreshAuthApi(context: Context): AuthApi {
+        return refreshAuthApi ?: synchronized(this) {
+            refreshAuthApi ?: buildRefreshRetrofit(context).create(AuthApi::class.java).also {
+                refreshAuthApi = it
             }
         }
     }
@@ -49,7 +64,10 @@ object ApiClient {
     private fun buildRetrofit(context: Context): Retrofit {
         return retrofit ?: synchronized(this) {
             retrofit ?: run {
+                val appContext = context.applicationContext
                 val tokenStore = TokenStore(context.applicationContext)
+                val refreshApi = getRefreshAuthApi(appContext)
+                val authRepository = AuthRepository(refreshApi, tokenStore)
 
                 val logging = HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BODY
@@ -57,7 +75,7 @@ object ApiClient {
 
                 val client = OkHttpClient.Builder()
                     .addInterceptor(logging)
-                    .addInterceptor(AuthInterceptor(tokenStore))
+                    .addInterceptor(AuthInterceptor(authRepository))
                     .connectTimeout(15, TimeUnit.SECONDS)
                     .readTimeout(20, TimeUnit.SECONDS)
                     .writeTimeout(20, TimeUnit.SECONDS)
@@ -73,9 +91,36 @@ object ApiClient {
         }
     }
 
+    private fun buildRefreshRetrofit(context: Context): Retrofit {
+        return refreshRetrofit ?: synchronized(this) {
+            refreshRetrofit ?: run {
+                val logging = HttpLoggingInterceptor().apply {
+                    level = HttpLoggingInterceptor.Level.BODY
+                }
+
+                val client = OkHttpClient.Builder()
+                    .addInterceptor(logging)
+                    .connectTimeout(15, TimeUnit.SECONDS)
+                    .readTimeout(20, TimeUnit.SECONDS)
+                    .writeTimeout(20, TimeUnit.SECONDS)
+                    .build()
+
+                Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .client(client)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                    .also { refreshRetrofit = it }
+            }
+        }
+    }
+
     fun clear() {
         authApi = null
+        refreshAuthApi = null
         promiseApi = null
+        userApi = null
         retrofit = null
+        refreshRetrofit = null
     }
 }

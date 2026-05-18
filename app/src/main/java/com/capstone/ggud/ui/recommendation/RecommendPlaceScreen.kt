@@ -117,10 +117,22 @@ fun RecommendPlaceScreen(
     LaunchedEffect(uiState.confirmSuccess) {
         if (uiState.confirmSuccess) {
             vm.clearConfirmSuccess()
-            navController.navigate("home") {
+            navController.navigate("home/$promiseId") {
                 popUpTo("home") {
                     inclusive = true
                 }
+                launchSingleTop = true
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.placeConfirmed, uiState.isHost) {
+        if (uiState.placeConfirmed && !uiState.isHost) {
+            navController.navigate("home/$promiseId") {
+                popUpTo("home") {
+                    inclusive = true
+                }
+                launchSingleTop = true
             }
         }
     }
@@ -173,16 +185,20 @@ fun RecommendPlaceScreen(
                     navController = navController,
                     stationName = stationName,
                     selectedTab = uiState.selectedTab,
+                    isHost = uiState.isHost,
                     onTabSelected = vm::selectTab,
                     onAiRecommend = vm::requestAiRecommendation,
                     onResetMidpoint = {
-                        if (uiState.isHost) {
-                            vm.resetMidpoint { navController.navigate("middle_point/$promiseId") }
-                        } else {
-                            navController.navigate("middle_point/$promiseId")
-                        }
+                        vm.resetMidpoint { navController.navigate("middle_point/$promiseId") }
                     },
-                    onHomeClick = { navController.navigate("home") }
+                    onHomeClick = {
+                        navController.navigate("home/$promiseId") {
+                            popUpTo("home") {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
                 )
 
                 if (uiState.status == "SELECTING_MIDPOINT") {
@@ -198,7 +214,7 @@ fun RecommendPlaceScreen(
             }
         }
 
-        if (selectedCount > 0) {
+        if (uiState.isHost && selectedCount > 0) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -225,15 +241,7 @@ fun RecommendPlaceScreen(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) {
-                            if (uiState.isHost) {
-                                vm.confirmAnySelectedPlace()
-                            } else {
-                                navController.navigate("home") {
-                                    popUpTo("home") {
-                                        inclusive = true
-                                    }
-                                }
-                            }
+                            vm.confirmAnySelectedPlace()
                         }
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                     contentAlignment = Alignment.Center
@@ -252,11 +260,7 @@ fun RecommendPlaceScreen(
                         Spacer(modifier = Modifier.width(12.dp))
 
                         Text(
-                            text = if (uiState.isHost) {
-                                "${selectedCount}개 장소로 약속 확정하기"
-                            } else {
-                                "홈으로 돌아가기"
-                            },
+                            text = "${selectedCount}개 장소로 약속 확정하기",
                             fontSize = 14.sp,
                             fontWeight = Bold,
                             color = Color.White
@@ -272,6 +276,7 @@ fun RecommendPlaceScreen(
 private fun RecommendTopBar(
     navController: NavHostController,
     stationName: String,
+    isHost: Boolean,
     selectedTab: PlaceRecommendationTab,
     onTabSelected: (PlaceRecommendationTab) -> Unit,
     onAiRecommend: (String) -> Unit,
@@ -298,17 +303,20 @@ private fun RecommendTopBar(
             .zIndex(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image( //뒤로가기 버튼
-                painter = painterResource(R.drawable.btn_back),
-                contentDescription = "뒤로가기",
-                modifier = Modifier
-                    .padding(start = (7.7).dp)
-                    .size(21.dp, 20.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) { onResetMidpoint() }
-            )
+            if (isHost) {
+                Image( //뒤로가기 버튼
+                    painter = painterResource(R.drawable.btn_back),
+                    contentDescription = "뒤로가기",
+                    modifier = Modifier
+                        .padding(start = (7.7).dp)
+                        .size(21.dp, 20.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onResetMidpoint() }
+                )
+            }
+
             Spacer(modifier = Modifier.width(16.dp))
 
             Column {
