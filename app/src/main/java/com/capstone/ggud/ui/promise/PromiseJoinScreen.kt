@@ -65,6 +65,10 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Build
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.ContextCompat
 import com.capstone.ggud.data.KakaoLocalRepository
@@ -423,12 +427,18 @@ fun PromiseJoinScreen(
                     modifier = Modifier.size(12.dp)
                 )
                 Spacer(modifier = Modifier.width(18.dp))
+
                 BasicTextField(
                     value = searchQuery,
                     onValueChange = {
                         if (it.length <= 50) {
                             searchQuery = it
                             searchPlaces(it)
+                            selectedLatitude = null
+                            selectedLongitude = null
+                            showLocation = false
+                            currentAddress = ""
+                            location = ""
                         }
                     },
                     singleLine = true,
@@ -450,8 +460,31 @@ fun PromiseJoinScreen(
                             )
                         }
                         inner()
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
+
+                if (searchQuery.isNotBlank()) {
+                    IconButton(
+                        onClick = {
+                            searchQuery = ""
+                            searchResults = emptyList()
+                            location = ""
+                            currentAddress = ""
+                            selectedLatitude = null
+                            selectedLongitude = null
+                            showLocation = false
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "검색어 지우기",
+                            tint = Color(0xFF9CA3AF),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
 
             if (searchResults.isNotEmpty()) {
