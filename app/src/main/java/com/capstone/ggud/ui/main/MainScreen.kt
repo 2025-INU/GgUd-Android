@@ -2,6 +2,7 @@ package com.capstone.ggud.ui.main
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -32,21 +34,29 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -54,8 +64,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -65,17 +77,21 @@ import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.network.dto.PromiseStatus
 import com.capstone.ggud.ui.components.CardContent
 import com.capstone.ggud.ui.components.PromiseProfileStack
+import com.capstone.ggud.ui.theme.pBlack
+import com.capstone.ggud.ui.theme.pBlue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavHostController,
     focusPromiseId: Long? = null
 ) {
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
 
     val api = remember { ApiClient.getPromiseApi(context) }
     val repository = remember { PromiseRepository(api) }
@@ -92,6 +108,61 @@ fun MainScreen(
     var showPromiseDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
     var joinCode by remember { mutableStateOf("") }
+
+    var searchedPromiseTitle by remember { mutableStateOf("") }
+    var searchedPromiseDate by remember { mutableStateOf("") }
+    var searchedPromiseTime by remember { mutableStateOf("") }
+    var searchedPromiseHost by remember { mutableStateOf("") }
+    var searchedPromiseId by remember { mutableStateOf<Long?>(null) }
+    var isCheckingCode by remember { mutableStateOf(false) }
+
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+    fun resetSearchedPromise() {
+        searchedPromiseTitle = ""
+        searchedPromiseDate = ""
+        searchedPromiseTime = ""
+        searchedPromiseHost = ""
+        searchedPromiseId = null
+    }
+
+    fun checkInviteCode(code: String) {
+        resetSearchedPromise()
+
+        if (code.length != 6) return
+
+        isCheckingCode = true
+
+        CoroutineScope(Dispatchers.Main).launch {
+            runCatching {
+                repository.getPromiseByInviteCode(code)
+            }.onSuccess { promise ->
+                if (promise.status == PromiseStatus.RECRUITING) {
+                    searchedPromiseTitle = promise.title
+                    searchedPromiseDate = MainViewModel.formatDate(promise.promiseDateTime)
+                    searchedPromiseTime = MainViewModel.formatTime(promise.promiseDateTime)
+                    searchedPromiseHost = promise.hostNickname ?: ""
+                    searchedPromiseId = promise.id
+                } else {
+                    Toast.makeText(
+                        context,
+                        "이미 진행 중이거나 참여할 수 없는 약속입니다.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }.onFailure {
+                Toast.makeText(
+                    context,
+                    "존재하지 않는 약속입니다. 코드를 다시 확인해주세요.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            isCheckingCode = false
+        }
+    }
 
     val bottomBarHeight = 91.dp
     val fabGap = 80.dp
@@ -139,19 +210,6 @@ fun MainScreen(
                 text = "GgUd",
                 fontWeight = Bold,
                 fontSize = 24.sp
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Image(
-                painter = painterResource(R.drawable.btn_notify),
-                contentDescription = "알림페이지",
-                modifier = Modifier
-                    .size(22.dp, 21.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        navController.navigate("notification")
-                    }
             )
         }
 
@@ -319,153 +377,370 @@ fun MainScreen(
         )
 
         if (showPromiseDialog) { //약속 다이얼로그
-            AlertDialog(
-                onDismissRequest = { showPromiseDialog = false }, //바깥영역 눌렀을때
-                containerColor = Color.White, //배경
-                title = { Text("약속") },
-                text = { Text("원하시는 기능을 선택해주세요.")},
-                confirmButton = { //오른쪽 버튼
-                    TextButton(
-                        onClick = {
-                            showPromiseDialog = false
-                            navController.navigate("promise")
-                        }
-                    ) { Text("약속 생성") }
-                },
-                dismissButton = { //왼쪽 버튼
-                    TextButton(
-                        onClick = {
-                            showPromiseDialog = false
-                            showJoinDialog = true
-                        }
-                    ) { Text("약속 참여") }
-                }
-            )
-        }
+            Dialog(
+                onDismissRequest = { showPromiseDialog = false }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = Color.White,
+                            shape = RoundedCornerShape(28.dp)
+                        )
+                        .padding(
+                            start = 28.dp,
+                            end = 28.dp,
+                            top = 24.dp,
+                            bottom = 24.dp
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "약속",
+                        fontSize = 20.sp,
+                        fontWeight = Bold,
+                        color = Color(0xFF111827)
+                    )
 
-        if (showJoinDialog) { //약속참여 다이얼로그 (기능X)
-            AlertDialog(
-                onDismissRequest = {
-                    showJoinDialog = false
-                    joinCode = "" //참여코드 초기화
-                },
-                containerColor = Color.White,
-                title = { Text("약속 참여") },
-                text = {
-                    Column {
-                        Text("카카오톡으로 받은 참여 코드를 입력해주세요.")
-                        Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                        Box( //참여코드 입력칸
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
+                    Text(
+                        text = "원하시는 기능을 선택해주세요.",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF9CA3AF),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                showPromiseDialog = false
+                                showJoinDialog = true
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFF0F9FF),
+                                contentColor = pBlue
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.5.dp, Color(0xFFE0F2FE)),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 0.dp,
+                                pressedElevation = 0.dp
+                            ),
+                            contentPadding = PaddingValues(0.dp)
                         ) {
-                            BasicTextField( //실제로는 텍스트필드 하나지만 6칸처럼 보이도록
-                                value = joinCode, //입력값
-                                onValueChange = { input ->
-                                    val newValue = input
-                                        .uppercase() //대문자 변환
-                                        .filter { it.isDigit() || it in 'A'..'Z' } //대문자+숫자만
-                                        .take(6) //6자리 제한
+                            Text(
+                                text = "약속 참여",
+                                fontSize = 16.sp,
+                                fontWeight = Bold
+                            )
+                        }
 
-                                    if (joinCode != newValue) {
-                                        joinCode = newValue
-                                    }
-                                },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Ascii
-                                ),
-                                textStyle = TextStyle( //실제 텍스트는 투명처리, 직접 6칸을 그려야하기 때문에
-                                    color = Color.Transparent
-                                ),
-                                cursorBrush = SolidColor(Color.Transparent), //커서도 투명처리
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                decorationBox = { //UI 직접 그려주는 영역
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        //가로 정렬 칸 간격 12, 가운데 정렬
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-                                    ) {
-                                        repeat(6) { index -> //6칸 반복 생성
-                                            //현재 칸에 들어갈 문자
-                                            //joinCode가 12면, 0번칸에 1, 1번칸에 2, 나머지는 빈문자열
-                                            val char = joinCode.getOrNull(index)?.toString() ?: ""
-                                            val isFocused = joinCode.length == index //현재 칸 위치 표시, joinCode 길이로
-
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(width = 36.dp, height = 52.dp)
-                                                    .border(
-                                                        width = 1.5.dp,
-                                                        color = if (isFocused) Color.Black else Color(0xFFE5E7EB),
-                                                        shape = RoundedCornerShape(12.dp)
-                                                    )
-                                                    .background(
-                                                        Color.White,
-                                                        RoundedCornerShape(12.dp)
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = char,
-                                                    fontSize = 20.sp,
-                                                    color = Color(0xFF111827),
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                        Button(
+                            onClick = {
+                                showPromiseDialog = false
+                                navController.navigate("promise")
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFF0F9FF),
+                                contentColor = pBlue
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.5.dp, Color(0xFFE0F2FE)),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 0.dp,
+                                pressedElevation = 0.dp
+                            ),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text(
+                                text = "약속 생성",
+                                fontSize = 16.sp,
+                                fontWeight = Bold
                             )
                         }
                     }
+                }
+            }
+        }
+
+        if (showJoinDialog) { //약속참여 바텀시트
+            ModalBottomSheet(
+                onDismissRequest = {
+                    showJoinDialog = false
+                    joinCode = ""
+                    resetSearchedPromise()
                 },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val code = joinCode.trim()
+                sheetState = sheetState,
+                containerColor = Color(0xFFF9FAFB),
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                dragHandle = {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 10.dp, bottom = 8.dp)
+                            .width(42.dp)
+                            .height(5.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color(0xFFD1D5DB))
+                    )
+                }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 28.dp)
+                        .padding(bottom = 36.dp)
+                ) {
+                    Text(
+                        text = "초대 코드로 참여",
+                        fontSize = 22.sp,
+                        fontWeight = Bold,
+                        color = pBlack
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                            CoroutineScope(Dispatchers.Main).launch {
-                                runCatching {
-                                    repository.getPromiseByInviteCode(code)
-                                }.onSuccess { promise ->
-                                    if (promise.status == PromiseStatus.RECRUITING) {
-                                        val joinedPromise = repository.joinPromiseByInviteCode(code)
+                    Text(
+                        text = "친구가 공유한 초대 코드를 붙여넣고 약속에 참여해보세요.",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF4B5563)
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                                        showJoinDialog = false
-                                        joinCode = ""
+                    BasicTextField(
+                        value = joinCode,
+                        onValueChange = { input ->
+                            val newValue = input
+                                .uppercase()
+                                .filter { it.isDigit() || it in 'A'..'Z' }
+                                .take(6)
 
-                                        navController.navigate("waiting/${joinedPromise.id}")
-                                    } else {
-                                        Toast.makeText(
-                                            context,
-                                            "이미 진행 중이거나 참여할 수 없는 약속입니다.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                            joinCode = newValue
+                            checkInviteCode(newValue)
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Ascii
+                        ),
+                        textStyle = TextStyle(
+                            fontSize = 18.sp,
+                            fontWeight = Bold,
+                            color = pBlack
+                        ),
+                        cursorBrush = SolidColor(pBlue),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp)
+                            .background(Color.White, RoundedCornerShape(14.dp))
+                            .padding(horizontal = 20.dp),
+                        decorationBox = { innerTextField ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    if (joinCode.isBlank()) {
+                                        Text(
+                                            text = "초대 코드를 입력하세요",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFFD1D5DB)
+                                        )
                                     }
-                                }.onFailure {
-                                    Toast.makeText(
-                                        context,
-                                        "존재하지 않는 약속입니다.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+
+                                    innerTextField()
+                                }
+
+                                if (isCheckingCode) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Color(0xFF3B62F6)
+                                    )
                                 }
                             }
                         }
-                    ) { Text("확인") }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showJoinDialog = false
-                            joinCode = ""
+                    )
+
+                    if (searchedPromiseId != null) {
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.White, RoundedCornerShape(14.dp))
+                                .padding(horizontal = 20.dp, vertical = 18.dp)
+                        ) {
+                            Text(
+                                text = searchedPromiseTitle,
+                                fontSize = 18.sp,
+                                fontWeight = Bold,
+                                color = Color(0xFF111827)
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_day),
+                                    contentDescription = null,
+                                    tint = Color(0xFF9CA3AF),
+                                    modifier = Modifier.size(16.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Text(
+                                    text = searchedPromiseDate,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF9CA3AF)
+                                )
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_time),
+                                    contentDescription = null,
+                                    tint = Color(0xFF9CA3AF),
+                                    modifier = Modifier.size(16.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Text(
+                                    text = searchedPromiseTime,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF9CA3AF)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "주최자: $searchedPromiseHost",
+                                fontSize = 14.sp,
+                                fontWeight = Bold,
+                                color = Color(0xFF60A5FA)
+                            )
                         }
-                    ) { Text("취소") }
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val pasted = clipboardManager.getText()?.text.orEmpty()
+                                val newValue = pasted
+                                    .uppercase()
+                                    .filter { it.isDigit() || it in 'A'..'Z' }
+                                    .take(6)
+
+                                joinCode = newValue
+                                checkInviteCode(newValue)
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(55.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = pBlue
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 0.dp,
+                                pressedElevation = 0.dp
+                            ),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text(
+                                text = "붙여넣기",
+                                fontSize = 16.sp,
+                                fontWeight = Bold
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                val code = joinCode.trim()
+
+                                if (code.length != 6) {
+                                    Toast.makeText(
+                                        context,
+                                        "초대 코드 6자리를 입력해주세요.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@Button
+                                }
+
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    runCatching {
+                                        repository.joinPromiseByInviteCode(code)
+                                    }.onSuccess { joinedPromise ->
+                                        showJoinDialog = false
+                                        joinCode = ""
+                                        searchedPromiseTitle = ""
+                                        searchedPromiseDate = ""
+                                        searchedPromiseTime = ""
+                                        searchedPromiseHost = ""
+                                        searchedPromiseId = null
+
+                                        navController.navigate("waiting/${joinedPromise.id}")
+                                    }.onFailure {
+                                        Toast.makeText(
+                                            context,
+                                            "약속 참여에 실패했습니다.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            },
+                            enabled = searchedPromiseId != null && !isCheckingCode,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(55.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2563EB),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFFBFDBFE),
+                                disabledContentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 0.dp,
+                                pressedElevation = 0.dp
+                            ),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text(
+                                text = "참여하기",
+                                fontSize = 16.sp,
+                                fontWeight = Bold
+                            )
+                        }
+                    }
                 }
-            )
+            }
         }
 
         Box( //하단바
@@ -695,7 +970,7 @@ fun ConfirmedCard(
                     modifier = Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF3B82F6))
+                        .background(pBlue)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
