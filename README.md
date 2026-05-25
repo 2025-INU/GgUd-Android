@@ -54,12 +54,16 @@ Android, iOS, Server 파트 협업 프로젝트.
 
 ```text
 ui/
- ├── home
- ├── map
- ├── promise
- ├── recommendation
  ├── calculate
- └── notification
+ ├── components
+ ├── history
+ ├── login
+ ├── main
+ ├── map
+ ├── my
+ ├── path
+ ├── promise
+ └── recommendation
 
 network/
 data/
