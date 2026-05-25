@@ -25,13 +25,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.ui.components.Section
 import com.capstone.ggud.ui.components.TopBar
+import com.capstone.ggud.ui.theme.pBlue
 
 @Composable
 fun NotifySettingScreen(navController: NavHostController) {
@@ -134,7 +134,7 @@ fun ToggleSwitch(
         onCheckedChange = onCheckedChange,
         modifier = modifier,
         colors = SwitchDefaults.colors(
-            checkedTrackColor = Color(0xFF3B82F6), //ON
+            checkedTrackColor = pBlue, //ON
             uncheckedTrackColor = Color(0xFFD1D5DB), //OFF
 
             checkedThumbColor = Color.White, //thumb 항상 흰색

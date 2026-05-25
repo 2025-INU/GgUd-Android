@@ -65,6 +65,12 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Build
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.ContextCompat
 import com.capstone.ggud.data.KakaoLocalRepository
@@ -250,7 +256,8 @@ fun PromiseJoinScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(327f / 185f)
+                    .wrapContentHeight()
+                    .heightIn(min = 185.dp)
                     .paint(
                         painter = painterResource(R.drawable.bg_promise_waiting),
                         contentScale = ContentScale.FillBounds
@@ -289,7 +296,9 @@ fun PromiseJoinScreen(
 
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .heightIn(min = 53.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.White)
                         .padding(16.dp),
@@ -423,12 +432,18 @@ fun PromiseJoinScreen(
                     modifier = Modifier.size(12.dp)
                 )
                 Spacer(modifier = Modifier.width(18.dp))
+
                 BasicTextField(
                     value = searchQuery,
                     onValueChange = {
                         if (it.length <= 50) {
                             searchQuery = it
                             searchPlaces(it)
+                            selectedLatitude = null
+                            selectedLongitude = null
+                            showLocation = false
+                            currentAddress = ""
+                            location = ""
                         }
                     },
                     singleLine = true,
@@ -450,8 +465,31 @@ fun PromiseJoinScreen(
                             )
                         }
                         inner()
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
+
+                if (searchQuery.isNotBlank()) {
+                    IconButton(
+                        onClick = {
+                            searchQuery = ""
+                            searchResults = emptyList()
+                            location = ""
+                            currentAddress = ""
+                            selectedLatitude = null
+                            selectedLongitude = null
+                            showLocation = false
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "검색어 지우기",
+                            tint = Color(0xFF9CA3AF),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
 
             if (searchResults.isNotEmpty()) {
