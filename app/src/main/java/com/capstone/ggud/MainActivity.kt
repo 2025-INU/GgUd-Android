@@ -23,7 +23,6 @@ import com.capstone.ggud.ui.map.KakaoMapScreen
 import com.capstone.ggud.ui.my.MypageScreen
 import com.capstone.ggud.ui.my.NotifySettingScreen
 import com.capstone.ggud.ui.my.ProfileEditScreen
-import com.capstone.ggud.ui.notification.NotificationScreen
 import com.capstone.ggud.ui.promise.PromiseJoinScreen
 import com.capstone.ggud.ui.promise.PromiseScreen
 import com.capstone.ggud.ui.promise.WaitingRoomScreen
@@ -81,8 +80,6 @@ class MainActivity : ComponentActivity() {
                                 promiseTitle = promiseTitle
                             )
                         }
-
-                        composable("notification") { NotificationScreen(navController = navController) }
 
                         composable("history") { HistoryScreen(navController = navController) }
 

@@ -65,6 +65,8 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Build
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
@@ -254,7 +256,8 @@ fun PromiseJoinScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(327f / 185f)
+                    .wrapContentHeight()
+                    .heightIn(min = 185.dp)
                     .paint(
                         painter = painterResource(R.drawable.bg_promise_waiting),
                         contentScale = ContentScale.FillBounds
@@ -293,7 +296,9 @@ fun PromiseJoinScreen(
 
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
+                        .wrapContentHeight()
+                        .heightIn(min = 53.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.White)
                         .padding(16.dp),

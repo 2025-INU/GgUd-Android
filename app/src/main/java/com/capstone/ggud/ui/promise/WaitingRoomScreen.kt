@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -145,54 +146,66 @@ fun WaitingRoomScreen(
                 .verticalScroll(scrollState)
         ) {
             Spacer(modifier = Modifier.height(11.dp))
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth().aspectRatio(327f / 165f)
-                    .paint(
-                        painter = painterResource(R.drawable.bg_promise_waiting),
-                        contentScale = ContentScale.Crop
-                    )
-                    .padding(24.dp)
+                    .fillMaxWidth()
+                    .height(165.dp)
             ) {
-                Row {
-                    Image(
-                        painter = painterResource(R.drawable.ic_promise),
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
+                Image(
+                    painter = painterResource(R.drawable.bg_promise_waiting),
+                    contentDescription = null,
+                    modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.FillBounds
+                )
 
-                    Column { //약속 요약
-                        Text(
-                            text = titleText,
-                            fontWeight = Bold,
-                            fontSize = 18.sp,
-                            color = pBlack
+                Column(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(24.dp)
+                ) {
+                    Row {
+                        Image(
+                            painter = painterResource(R.drawable.ic_promise),
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp)
                         )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column {
+                            Text(
+                                text = titleText,
+                                fontWeight = Bold,
+                                fontSize = 18.sp,
+                                color = pBlack
+                            )
+                            Text(
+                                text = dateText,
+                                fontSize = 14.sp,
+                                color = Color(0xFF4B5563)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .heightIn(min = 53.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
                         Text(
-                            text = dateText,
+                            text = "약속이 생성되었습니다!",
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
-                            color = Color(0xFF4B5563)
+                            color = Color(0xFF16A34A)
                         )
                     }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White)
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "약속이 생성되었습니다!",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        color = Color(0xFF16A34A),
-                        modifier = Modifier.align(Alignment.CenterStart)
-                    )
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))

@@ -64,6 +64,7 @@ import com.capstone.ggud.R
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
 import com.capstone.ggud.ui.components.TopBar
+import com.capstone.ggud.ui.theme.pBlue
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -271,7 +272,7 @@ fun PromiseScreen(navController: NavHostController) {
                         }
                         .border(
                             width = 1.dp,
-                            color = if(isNameFocused) Color(0xFF3B82F6) else Color(0xFFE5E7EB),
+                            color = if(isNameFocused) pBlue else Color(0xFFE5E7EB),
                             shape = RoundedCornerShape(12.dp)
                         )
                         .padding(17.dp),
@@ -352,7 +353,7 @@ fun PromiseScreen(navController: NavHostController) {
                         }
                         .border(
                             width = 1.dp,
-                            color = if(isDateFocused) Color(0xFF3B82F6) else Color(0xFFE5E7EB),
+                            color = if(isDateFocused) pBlue else Color(0xFFE5E7EB),
                             shape = RoundedCornerShape(12.dp)
                         )
                         .padding(17.dp)
@@ -402,7 +403,7 @@ fun PromiseScreen(navController: NavHostController) {
                         }
                         .border(
                             width = 1.dp,
-                            color = if(isTimeFocused) Color(0xFF3B82F6) else Color(0xFFE5E7EB),
+                            color = if(isTimeFocused) pBlue else Color(0xFFE5E7EB),
                             shape = RoundedCornerShape(12.dp)
                         )
                         .padding(17.dp)
