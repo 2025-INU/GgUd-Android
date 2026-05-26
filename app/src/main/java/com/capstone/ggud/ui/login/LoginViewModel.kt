@@ -23,6 +23,8 @@ class LoginViewModel(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState
 
+    private val requiredScopes = listOf("talk_message")
+
     fun loginWithKakao(context: Context) {
         if (_uiState.value.loading) return
 
@@ -36,6 +38,7 @@ class LoginViewModel(
                 )
                 return@callback
             }
+
             if (token == null) {
                 _uiState.value = LoginUiState(
                     loading = false,
@@ -44,24 +47,67 @@ class LoginViewModel(
                 return@callback
             }
 
-            viewModelScope.launch {
-                runCatching {
-                    repo.loginWithKakaoSdk(token.accessToken, token.refreshToken)
-                }.onSuccess {
-                    _uiState.value = LoginUiState(loading = false, success = true)
-                }.onFailure { t ->
-                    _uiState.value = LoginUiState(
-                        loading = false,
-                        errorMessage = "서버 로그인 실패: ${t.message}"
-                    )
-                }
-            }
+            ensureTalkMessageScope(context, token)
         }
 
         if (UserApiClient.instance.isKakaoTalkLoginAvailable(context)) {
             UserApiClient.instance.loginWithKakaoTalk(context, callback = callback)
         } else {
             UserApiClient.instance.loginWithKakaoAccount(context, callback = callback)
+        }
+    }
+
+    private fun ensureTalkMessageScope(
+        context: Context,
+        token: OAuthToken
+    ) {
+        UserApiClient.instance.scopes(requiredScopes) { scopeInfo, error ->
+            if (error != null) {
+                _uiState.value = LoginUiState(
+                    loading = false,
+                    errorMessage = "카카오 동의항목 조회 실패: ${error.message}"
+                )
+                return@scopes
+            }
+
+            val needsTalkMessage = scopeInfo?.scopes
+                ?.firstOrNull { it.id == "talk_message" }
+                ?.agreed != true
+
+            if (needsTalkMessage) {
+                UserApiClient.instance.loginWithNewScopes(
+                    context,
+                    requiredScopes
+                ) { newToken, newScopeError ->
+                    if (newScopeError != null) {
+                        _uiState.value = LoginUiState(
+                            loading = false,
+                            errorMessage = "카카오 메시지 권한 동의가 필요합니다."
+                        )
+                        return@loginWithNewScopes
+                    }
+
+                    val finalToken = newToken ?: token
+                    loginToServer(finalToken)
+                }
+            } else {
+                loginToServer(token)
+            }
+        }
+    }
+
+    private fun loginToServer(token: OAuthToken) {
+        viewModelScope.launch {
+            runCatching {
+                repo.loginWithKakaoSdk(token.accessToken, token.refreshToken)
+            }.onSuccess {
+                _uiState.value = LoginUiState(loading = false, success = true)
+            }.onFailure { t ->
+                _uiState.value = LoginUiState(
+                    loading = false,
+                    errorMessage = "서버 로그인 실패: ${t.message}"
+                )
+            }
         }
     }
 
