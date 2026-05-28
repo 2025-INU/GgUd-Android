@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -97,6 +99,14 @@ fun RecommendPlaceScreen(
     )
 
     val uiState by vm.uiState.collectAsState()
+
+    DisposableEffect(vm) {
+        vm.startStatusPolling()
+
+        onDispose {
+            vm.stopStatusPolling()
+        }
+    }
 
     var focusedPlaceId by remember(stationName) { mutableStateOf<String?>(null) }
 
@@ -529,11 +539,24 @@ private fun BottomSheetContent(
                         .height(120.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "장소 추천을 불러오는 중입니다...",
-                        fontSize = 14.sp,
-                        color = Color(0xFF6B7280)
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            color = Color(0xFF0284C7),
+                            strokeWidth = 3.dp
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "장소 추천을 불러오는 중입니다...",
+                            fontSize = 14.sp,
+                            color = Color(0xFF6B7280)
+                        )
+                    }
                 }
             }
 
@@ -694,7 +717,7 @@ private fun RecommendPlaceCard(
                 maxLines = 1
             )
 
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.DirectionsWalk,
                     contentDescription = null,
@@ -703,7 +726,7 @@ private fun RecommendPlaceCard(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "${String.format("%.1f", place.distanceFromMidpoint)}km",
+                    text = "${String.format("%.2f", place.distanceFromMidpoint)}km",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF0284C7)
@@ -740,6 +763,7 @@ private fun RecommendPlaceCard(
             Text(
                 text = place.category,
                 fontSize = 12.sp,
+                maxLines = 1,
                 color = Color(0xFF4B5563)
             )
         }

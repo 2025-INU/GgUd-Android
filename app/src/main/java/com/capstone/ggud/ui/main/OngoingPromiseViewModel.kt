@@ -118,22 +118,42 @@ class OngoingPromiseViewModel(
                     emptyList()
                 }
 
+                val departureLocations = mapData.participantDepartures.map { participant ->
+                    OngoingParticipantLocation(
+                        userId = participant.userId,
+                        nickname = participant.nickname,
+                        profileImageUrl = participant.profileImageUrl,
+                        latitude = participant.latitude,
+                        longitude = participant.longitude,
+                        isArrived = false
+                    )
+                }
+
+                val currentLocations = mapData.currentLocations.map { participant ->
+                    OngoingParticipantLocation(
+                        userId = participant.userId,
+                        nickname = participant.nickname,
+                        profileImageUrl = participant.profileImageUrl,
+                        latitude = participant.latitude,
+                        longitude = participant.longitude,
+                        isArrived = false
+                    )
+                }
+
+                val mergedLocations =
+                    (departureLocations + currentLocations)
+                        .groupBy { it.userId }
+                        .map { (_, locations) ->
+                            locations.last()
+                        }
+
                 uiState = uiState.copy(
                     isLoading = false,
                     destinationLat = cachedRouteData?.destinationLat ?: destination?.latitude,
                     destinationLon = cachedRouteData?.destinationLon ?: destination?.longitude,
                     destinationName = cachedRouteData?.destinationName ?: destination?.name.orEmpty(),
                     routeOptions = routeOptions,
-                    participantLocations = mapData.currentLocations.map { participant ->
-                        OngoingParticipantLocation(
-                            userId = participant.userId,
-                            nickname = participant.nickname,
-                            profileImageUrl = participant.profileImageUrl,
-                            latitude = participant.latitude,
-                            longitude = participant.longitude,
-                            isArrived = false
-                        )
-                    }
+                    participantLocations = mergedLocations
                 )
             }.onFailure { throwable ->
                 hasLoaded = false

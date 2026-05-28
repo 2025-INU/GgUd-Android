@@ -9,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import com.capstone.ggud.data.PromiseRepository
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
