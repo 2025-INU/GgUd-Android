@@ -35,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -50,7 +49,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.capstone.ggud.R
-import com.capstone.ggud.ui.components.TopBar
 import com.capstone.ggud.ui.components.formatIsoToDotTime
 import com.capstone.ggud.ui.theme.pBlack
 import com.kakao.sdk.share.ShareClient

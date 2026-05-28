@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.dto.PlaceRecommendationItem
 import com.capstone.ggud.network.dto.PlaceRecommendationTab
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class RecommendPlaceUiState(
@@ -35,15 +37,14 @@ class RecommendPlaceViewModel(
     private val _uiState = MutableStateFlow(RecommendPlaceUiState())
     val uiState: StateFlow<RecommendPlaceUiState> = _uiState.asStateFlow()
 
-    init {
-        watchPromiseStatus()
-    }
+    private var statusPollingJob: Job? = null
+    private var didLoadRecommendations = false
 
-    private fun watchPromiseStatus() {
-        viewModelScope.launch {
-            var didLoadRecommendations = false
+    fun startStatusPolling() {
+        if (statusPollingJob?.isActive == true) return
 
-            while (true) {
+        statusPollingJob = viewModelScope.launch {
+            while (isActive) {
                 repository.getPromiseStatus(promiseId)
                     .onSuccess { rawStatus ->
                         val status = rawStatus
@@ -53,7 +54,6 @@ class RecommendPlaceViewModel(
                         _uiState.update {
                             it.copy(
                                 status = status,
-                                isLoading = status == "MIDPOINT_CONFIRMED" && !didLoadRecommendations,
                                 placeConfirmed = status == "PLACE_CONFIRMED"
                             )
                         }
@@ -71,14 +71,15 @@ class RecommendPlaceViewModel(
                                     isLoading = false
                                 )
                             }
+                            stopStatusPolling()
                             return@launch
                         }
                     }
-                    .onFailure {
+                    .onFailure { throwable ->
                         _uiState.update { state ->
                             state.copy(
                                 isLoading = false,
-                                errorMessage = it.message
+                                errorMessage = throwable.message
                             )
                         }
                     }
@@ -86,6 +87,16 @@ class RecommendPlaceViewModel(
                 delay(3000)
             }
         }
+    }
+
+    fun stopStatusPolling() {
+        statusPollingJob?.cancel()
+        statusPollingJob = null
+    }
+
+    override fun onCleared() {
+        stopStatusPolling()
+        super.onCleared()
     }
 
     fun selectTab(tab: PlaceRecommendationTab) {

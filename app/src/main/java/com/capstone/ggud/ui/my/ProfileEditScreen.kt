@@ -1,6 +1,5 @@
 package com.capstone.ggud.ui.my
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

@@ -84,17 +84,14 @@ fun CalculateScreen(
     )
     val uiState by vm.uiState.collectAsState()
 
-    LaunchedEffect(promiseId, uiState.settlement?.settlementCompleted) {
-        vm.fetchMe()
-
-        while (uiState.settlement?.settlementCompleted != true) {
-            vm.loadExpenses(promiseId)
-            kotlinx.coroutines.delay(5000)
-        }
+    LaunchedEffect(promiseId) {
+        vm.loadInitial(promiseId)
     }
 
-    LaunchedEffect(uiState.myAmountText) {
+    LaunchedEffect(uiState.myAmountText, uiState.userEditedAmount, uiState.settlement?.settlementCompleted) {
+        if (!uiState.userEditedAmount) return@LaunchedEffect
         if (uiState.myAmountText.isBlank()) return@LaunchedEffect
+        if (uiState.settlement?.settlementCompleted == true) return@LaunchedEffect
 
         kotlinx.coroutines.delay(500)
 

@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,13 +49,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.capstone.ggud.R
 import com.capstone.ggud.data.PromiseRepository
 import com.capstone.ggud.network.ApiClient
-import com.capstone.ggud.ui.components.TopBar
 import com.capstone.ggud.ui.map.KakaoMapScreen
 import com.capstone.ggud.ui.theme.pBlack
 import kotlinx.coroutines.delay
@@ -82,6 +85,25 @@ fun MiddlePointScreen(
         factory = MiddlePointViewModelFactory(repo, promiseId)
     )
     val uiState by vm.uiState.collectAsStateWithLifecycle()
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner, vm) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> vm.startStatusPolling()
+                Lifecycle.Event.ON_STOP -> vm.stopStatusPolling()
+                else -> Unit
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            vm.stopStatusPolling()
+        }
+    }
 
     var selectedItem by remember { mutableStateOf<MiddlePointCardUi?>(null) }
 

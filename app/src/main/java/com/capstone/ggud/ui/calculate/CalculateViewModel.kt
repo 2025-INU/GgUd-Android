@@ -17,6 +17,7 @@ data class CalculateUiState(
     val settlement: SettlementResponse? = null,
     val myAmountText: String = "",
     val myUserId: Long? = null,
+    val userEditedAmount: Boolean = false,
     val error: String? = null
 )
 
@@ -49,6 +50,37 @@ class CalculateViewModel(
         }
     }
 
+    fun loadInitial(promiseId: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(loading = true, error = null)
+
+            runCatching {
+                val me = userApi.getMyPage()
+                val response = repo.getExpenses(promiseId)
+
+                me to response
+            }.onSuccess { (me, response) ->
+                _uiState.value = _uiState.value.copy(
+                    loading = false,
+                    myUserId = me.id,
+                    settlement = response,
+                    myAmountText = response.expenses
+                        .firstOrNull { it.userId == me.id }
+                        ?.paidAmount
+                        ?.takeIf { it > 0 }
+                        ?.toString()
+                        ?: "",
+                    error = null
+                )
+            }.onFailure { e ->
+                _uiState.value = _uiState.value.copy(
+                    loading = false,
+                    error = e.message
+                )
+            }
+        }
+    }
+
     fun loadExpenses(promiseId: Long) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(loading = true, error = null)
@@ -64,7 +96,8 @@ class CalculateViewModel(
                         ?.paidAmount
                         ?.takeIf { it > 0 }
                         ?.toString()
-                        ?: ""
+                        ?: "",
+                    userEditedAmount = false
                 )
             }.onFailure {
                 _uiState.value = _uiState.value.copy(
@@ -77,7 +110,10 @@ class CalculateViewModel(
 
     fun changeAmount(text: String) {
         val digitsOnly = text.filter { it.isDigit() }.take(12)
-        _uiState.value = _uiState.value.copy(myAmountText = digitsOnly)
+        _uiState.value = _uiState.value.copy(
+            myAmountText = digitsOnly,
+            userEditedAmount = true
+        )
     }
 
     fun submitMyExpense(promiseId: Long) {

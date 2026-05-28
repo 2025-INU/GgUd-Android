@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.capstone.ggud.data.PromiseRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class MiddlePointUiState(
@@ -26,15 +28,14 @@ class MiddlePointViewModel(
     private val _uiState = MutableStateFlow(MiddlePointUiState(isLoading = true))
     val uiState: StateFlow<MiddlePointUiState> = _uiState.asStateFlow()
 
-    init {
-        watchPromiseStatus()
-    }
+    private var statusPollingJob: Job? = null
+    private var didLoadRecommendations = false
 
-    private fun watchPromiseStatus() {
-        viewModelScope.launch {
-            var didLoadRecommendations = false
+    fun startStatusPolling() {
+        if (statusPollingJob?.isActive == true) return
 
-            while (true) {
+        statusPollingJob = viewModelScope.launch {
+            while (isActive) {
                 repo.getPromiseStatus(promiseId)
                     .onSuccess { rawStatus ->
                         val status = rawStatus
@@ -51,6 +52,10 @@ class MiddlePointViewModel(
                             didLoadRecommendations = true
                             loadMidpointRecommendations()
                         }
+
+                        if (status == "MIDPOINT_CONFIRMED" || status == "PLACE_CONFIRMED" || status == "IN_PROGRESS") {
+                            stopStatusPolling()
+                        }
                     }
                     .onFailure {
                         _uiState.value = _uiState.value.copy(
@@ -62,6 +67,16 @@ class MiddlePointViewModel(
                 delay(3000)
             }
         }
+    }
+
+    fun stopStatusPolling() {
+        statusPollingJob?.cancel()
+        statusPollingJob = null
+    }
+
+    override fun onCleared() {
+        stopStatusPolling()
+        super.onCleared()
     }
 
     fun confirmMidpoint(
