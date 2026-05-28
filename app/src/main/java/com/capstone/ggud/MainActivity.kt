@@ -21,7 +21,6 @@ import com.capstone.ggud.ui.main.MainScreen
 import com.capstone.ggud.ui.main.OngoingPromiseScreen
 import com.capstone.ggud.ui.map.KakaoMapScreen
 import com.capstone.ggud.ui.my.MypageScreen
-import com.capstone.ggud.ui.my.NotifySettingScreen
 import com.capstone.ggud.ui.my.ProfileEditScreen
 import com.capstone.ggud.ui.promise.PromiseJoinScreen
 import com.capstone.ggud.ui.promise.PromiseScreen
@@ -29,7 +28,6 @@ import com.capstone.ggud.ui.promise.WaitingRoomScreen
 import com.capstone.ggud.ui.recommendation.MiddlePointScreen
 import com.capstone.ggud.ui.recommendation.RecommendPlaceScreen
 import com.capstone.ggud.ui.theme.GgUdTheme
-import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +82,6 @@ class MainActivity : ComponentActivity() {
                         composable("history") { HistoryScreen(navController = navController) }
 
                         composable("my") { MypageScreen(navController = navController) }
-                        composable("notify_setting") { NotifySettingScreen(navController = navController) }
                         composable("profile") { ProfileEditScreen(navController = navController) }
 
                         composable("promise") { PromiseScreen(navController = navController) }

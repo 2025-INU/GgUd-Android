@@ -148,14 +148,12 @@ fun MypageScreen(navController: NavHostController) {
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .wrapContentHeight()
-                    .heightIn(min = 182.dp)
+                    .heightIn(min = 121.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color.White)
             ) {
                 Column {
                     Content( R.drawable.ic_profile, "프로필 수정", {navController.navigate("profile")})
-                    Divider(thickness = 1.dp, color = Color(0xFFF9FAFB))
-                    Content(R.drawable.ic_notify, "알림 설정", {navController.navigate("notify_setting")})
                     Divider(thickness = 1.dp, color = Color(0xFFF9FAFB))
                     Content(R.drawable.ic_logout, "로그아웃") { vm.logout() }
                 }

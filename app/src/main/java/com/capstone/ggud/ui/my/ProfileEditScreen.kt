@@ -78,6 +78,10 @@ fun ProfileEditScreen(navController: NavHostController) {
         }
     }
 
+    LaunchedEffect(Unit) {
+        vm.getMyPage()
+    }
+
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()

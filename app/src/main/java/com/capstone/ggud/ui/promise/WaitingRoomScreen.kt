@@ -80,6 +80,7 @@ fun WaitingRoomScreen(
     LaunchedEffect(promiseId) {
         vm.fetchSummary(promiseId)
         vm.fetchMe()
+        vm.fetchInviteCode(promiseId)
     }
 
     LaunchedEffect(promiseId) {
@@ -87,12 +88,6 @@ fun WaitingRoomScreen(
             vm.fetchParticipants(promiseId)
             delay(3000)
         }
-    }
-
-    LaunchedEffect(uiState.inviteCode) {
-        val code = uiState.inviteCode ?: return@LaunchedEffect
-        shareWithKakaoTalk(context, code)
-        vm.clearInviteCode()
     }
 
     LaunchedEffect(locationSubmitted) {
@@ -227,9 +222,27 @@ fun WaitingRoomScreen(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        vm.fetchInviteCode(promiseId)
+                        uiState.inviteCode?.let { code ->
+                            shareWithKakaoTalk(context, code)
+                        }
                     }
             )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFF3B82F6), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ){
+                Text(
+                    text = "초대 코드: ${uiState.inviteCode}",
+                    fontWeight = Bold,
+                    fontSize = 14.sp,
+                    color = Color(0xFF3B82F6)
+                )
+            }
 
             Text(
                 text = "코드를 통해 친구들이 약속에 참여할 수 있어요",
@@ -459,7 +472,7 @@ fun PeopleCard(
                 text = when {
                     enterLocation -> "위치 입력 완료"
                     isMe -> "클릭해서 위치 입력하기"
-                    else -> "위치 입력중..."
+                    else -> "위치 입력 대기중"
                 },
                 fontSize = 14.sp,
                 color = Color(0xFF4B5563)

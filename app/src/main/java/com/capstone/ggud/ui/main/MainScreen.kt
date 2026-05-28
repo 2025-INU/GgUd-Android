@@ -33,7 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,7 +40,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,7 +47,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -114,6 +111,7 @@ fun MainScreen(
     var searchedPromiseTime by remember { mutableStateOf("") }
     var searchedPromiseHost by remember { mutableStateOf("") }
     var searchedPromiseId by remember { mutableStateOf<Long?>(null) }
+    var searchedPromiseError by remember { mutableStateOf("") }
     var isCheckingCode by remember { mutableStateOf(false) }
 
     val sheetState = rememberModalBottomSheetState(
@@ -126,6 +124,7 @@ fun MainScreen(
         searchedPromiseTime = ""
         searchedPromiseHost = ""
         searchedPromiseId = null
+        searchedPromiseError = ""
     }
 
     fun checkInviteCode(code: String) {
@@ -145,19 +144,12 @@ fun MainScreen(
                     searchedPromiseTime = MainViewModel.formatTime(promise.promiseDateTime)
                     searchedPromiseHost = promise.hostNickname ?: ""
                     searchedPromiseId = promise.id
+                    searchedPromiseError = ""
                 } else {
-                    Toast.makeText(
-                        context,
-                        "이미 진행 중이거나 참여할 수 없는 약속입니다.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    searchedPromiseError = "이미 진행 중이거나 참여할 수 없는 약속입니다."
                 }
             }.onFailure {
-                Toast.makeText(
-                    context,
-                    "존재하지 않는 약속입니다. 코드를 다시 확인해주세요.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                searchedPromiseError = "초대 정보를 불러오지 못했어요.\n코드를 다시 확인해주세요."
             }
 
             isCheckingCode = false
@@ -427,11 +419,11 @@ fun MainScreen(
                                 .weight(1f)
                                 .height(50.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFF0F9FF),
-                                contentColor = pBlue
+                                containerColor = Color(0xFFEFF6FF),
+                                contentColor = Color(0xFF2563EB)
                             ),
                             shape = RoundedCornerShape(14.dp),
-                            border = BorderStroke(1.5.dp, Color(0xFFE0F2FE)),
+                            border = BorderStroke(1.5.dp, Color(0xFFBFDBFE)),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 0.dp,
                                 pressedElevation = 0.dp
@@ -454,11 +446,11 @@ fun MainScreen(
                                 .weight(1f)
                                 .height(50.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFF0F9FF),
-                                contentColor = pBlue
+                                containerColor = Color(0xFFEFF6FF),
+                                contentColor = Color(0xFF2563EB)
                             ),
                             shape = RoundedCornerShape(14.dp),
-                            border = BorderStroke(1.5.dp, Color(0xFFE0F2FE)),
+                            border = BorderStroke(1.5.dp, Color(0xFFBFDBFE)),
                             elevation = ButtonDefaults.buttonElevation(
                                 defaultElevation = 0.dp,
                                 pressedElevation = 0.dp
@@ -575,7 +567,7 @@ fun MainScreen(
                         }
                     )
 
-                    if (searchedPromiseId != null) {
+                    if (searchedPromiseId != null || searchedPromiseError.isNotBlank()) {
                         Spacer(modifier = Modifier.height(20.dp))
 
                         Column(
@@ -584,61 +576,70 @@ fun MainScreen(
                                 .background(Color.White, RoundedCornerShape(14.dp))
                                 .padding(horizontal = 20.dp, vertical = 18.dp)
                         ) {
-                            Text(
-                                text = searchedPromiseTitle,
-                                fontSize = 18.sp,
-                                fontWeight = Bold,
-                                color = Color(0xFF111827)
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_day),
-                                    contentDescription = null,
-                                    tint = Color(0xFF9CA3AF),
-                                    modifier = Modifier.size(16.dp)
+                            if (searchedPromiseError.isNotBlank()) {
+                                Text(
+                                    text = searchedPromiseError,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFFEF4444)
+                                )
+                            } else {
+                                Text(
+                                    text = searchedPromiseTitle,
+                                    fontSize = 18.sp,
+                                    fontWeight = Bold,
+                                    color = Color(0xFF111827)
                                 )
 
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_day),
+                                        contentDescription = null,
+                                        tint = Color(0xFF9CA3AF),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Text(
+                                        text = searchedPromiseDate,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF9CA3AF)
+                                    )
+
+                                    Spacer(modifier = Modifier.width(16.dp))
+
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_time),
+                                        contentDescription = null,
+                                        tint = Color(0xFF9CA3AF),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Text(
+                                        text = searchedPromiseTime,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF9CA3AF)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
 
                                 Text(
-                                    text = searchedPromiseDate,
+                                    text = "주최자: $searchedPromiseHost",
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF9CA3AF)
-                                )
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_time),
-                                    contentDescription = null,
-                                    tint = Color(0xFF9CA3AF),
-                                    modifier = Modifier.size(16.dp)
-                                )
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Text(
-                                    text = searchedPromiseTime,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF9CA3AF)
+                                    fontWeight = Bold,
+                                    color = Color(0xFF60A5FA)
                                 )
                             }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = "주최자: $searchedPromiseHost",
-                                fontSize = 14.sp,
-                                fontWeight = Bold,
-                                color = Color(0xFF60A5FA)
-                            )
                         }
                     }
 
@@ -664,7 +665,7 @@ fun MainScreen(
                                 .height(55.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.White,
-                                contentColor = pBlue
+                                contentColor = Color(0xFF3B82F6)
                             ),
                             shape = RoundedCornerShape(14.dp),
                             elevation = ButtonDefaults.buttonElevation(
@@ -985,6 +986,7 @@ fun ConfirmedCard(
     Spacer(modifier = Modifier.height(16.dp))
 }
 
+//생성중 약속 카드
 @Composable
 fun SimpleUpcomingCard(
     modifier: Modifier = Modifier,
@@ -1030,6 +1032,21 @@ fun SimpleUpcomingCard(
                     ) { onCancelClick() }
                 )
             }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(R.drawable.ic_spot),
+                contentDescription = null,
+                tint = Color(0xFF4B5563)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "장소 미정",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF4B5563)
+            )
         }
     }
 

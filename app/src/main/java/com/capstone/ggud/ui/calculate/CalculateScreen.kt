@@ -25,7 +25,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -80,10 +84,10 @@ fun CalculateScreen(
     )
     val uiState by vm.uiState.collectAsState()
 
-    LaunchedEffect(promiseId) {
+    LaunchedEffect(promiseId, uiState.settlement?.settlementCompleted) {
         vm.fetchMe()
 
-        while (true) {
+        while (uiState.settlement?.settlementCompleted != true) {
             vm.loadExpenses(promiseId)
             kotlinx.coroutines.delay(5000)
         }
@@ -288,22 +292,64 @@ fun CalculateScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Image(
-                    painter = painterResource(R.drawable.btn_total_calculate),
-                    contentDescription = "총 정산 버튼",
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .scale(1.08f)
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
+                if (settlement.settlementCompleted) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .shadow(
+                                elevation = 7.dp,
+                                shape = RoundedCornerShape(12.dp),
+                                clip = false,
+                                ambientColor = Color.Black.copy(alpha = 0.36f),
+                                spotColor = Color.Black.copy(alpha = 0.4f)
+                            )
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFE5E7EB)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            vm.settleExpenses(promiseId) {
-                                val popped = navController.popBackStack()
-                                if (!popped) navController.navigateUp()
-                            }
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = Color(0xFF6B7280),
+                                modifier = Modifier.size(20.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = "정산 완료됨",
+                                fontWeight = Bold,
+                                fontSize = 15.sp,
+                                color = Color(0xFF6B7280)
+                            )
                         }
-                )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.btn_total_calculate),
+                        contentDescription = "총 정산 버튼",
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .scale(1.08f)
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {
+                                vm.settleExpenses(promiseId) {
+                                    val popped = navController.popBackStack()
+                                    if (!popped) navController.navigateUp()
+                                }
+                            }
+                    )
+                }
             }
         }
     }
